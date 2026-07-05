@@ -2,6 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
 
 import { loginSchema, LoginFormValues } from "@/schema/login";
 
@@ -9,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export default function AdminLoginPage() {
+import { CreditCard, GraduationCap, Landmark, ShieldCheck } from "lucide-react";
+
+export default function LoginPage() {
   const {
     register,
     handleSubmit,
@@ -24,50 +27,151 @@ export default function AdminLoginPage() {
 
   const onSubmit = async (values: LoginFormValues) => {
     console.log(values);
-
-    // await fetch("/schools/login", {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify(values),
-    // });
   };
 
   return (
-    <div className="mx-auto max-w-md py-10">
-      <h1 className="mb-6 text-3xl font-bold">School Login</h1>
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-primary/5">
+      <div className="grid min-h-screen lg:grid-cols-2">
+        {/* Left Side */}
+        <section className="hidden flex-col justify-between gap-10 bg-primary p-12 text-primary-foreground lg:flex">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-white/15 p-3">
+              <GraduationCap className="size-7" />
+            </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+            <div>
+              <h2 className="text-2xl font-bold">ScholarPay</h2>
+              <p className="text-primary-foreground/80">
+                Fee Management Platform
+              </p>
+            </div>
+          </div>
 
-          <Input
-            id="email"
-            type="email"
-            placeholder="school@example.com"
-            {...register("email")}
-          />
+          <div className=" max-w-lg">
+            <h1 className="text-5xl font-bold leading-tight">
+              Modern fee collection for modern schools.
+            </h1>
 
-          {errors.email && (
-            <p className="text-sm text-red-500">{errors.email.message}</p>
-          )}
-        </div>
+            <p className="mt-6 text-lg text-primary-foreground/80">
+              Track installment payments, manage students, monitor outstanding
+              balances and simplify your school&rsquo;s finances.
+            </p>
+          </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <div className="grid gap-4">
+            <div className="flex items-start gap-4 rounded-2xl bg-white/10 p-5 backdrop-blur">
+              <CreditCard className="mt-1 size-5" />
+              <div>
+                <h3 className="font-semibold">Installment Fee Payments</h3>
 
-          <Input id="password" type="password" {...register("password")} />
+                <p className="text-sm text-primary-foreground/75">
+                  Accept and monitor payments over multiple installments.
+                </p>
+              </div>
+            </div>
 
-          {errors.password && (
-            <p className="text-sm text-red-500">{errors.password.message}</p>
-          )}
-        </div>
+            <div className="flex items-start gap-4 rounded-2xl bg-white/10 p-5 backdrop-blur">
+              <Landmark className="mt-1 size-5" />
+              <div>
+                <h3 className="font-semibold">Financial Reports</h3>
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Signing in..." : "Login"}
-        </Button>
-      </form>
-    </div>
+                <p className="text-sm text-primary-foreground/75">
+                  View revenue, balances and payment history instantly.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4 rounded-2xl bg-white/10 p-5 backdrop-blur">
+              <ShieldCheck className="mt-1 size-5" />
+              <div>
+                <h3 className="font-semibold">Secure Cloud Platform</h3>
+
+                <p className="text-sm text-primary-foreground/75">
+                  Your school&rsquo;s financial records are protected and
+                  available anywhere.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Right Side */}
+        <section className="flex items-center justify-center px-6 py-10">
+          <div className="w-full max-w-md">
+            {/* Mobile Logo */}
+            <div className="mb-10 text-center lg:hidden">
+              <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+                <GraduationCap className="size-7" />
+              </div>
+
+              <h1 className="text-3xl font-bold">ScholarPay</h1>
+            </div>
+
+            <div className="rounded-3xl border bg-background p-8 shadow-2xl">
+              <div className="mb-8">
+                <h2 className="text-3xl font-bold">Welcome Back</h2>
+
+                <p className="mt-2 text-muted-foreground">
+                  Sign in to continue managing your school&rsquo;s fee payments.
+                </p>
+              </div>
+
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="school@example.com"
+                    {...register("email")}
+                  />
+
+                  {errors.email && (
+                    <p className="text-sm text-destructive">
+                      {errors.email.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+
+                  <Input
+                    id="password"
+                    type="password"
+                    {...register("password")}
+                  />
+
+                  {errors.password && (
+                    <p className="text-sm text-destructive">
+                      {errors.password.message}
+                    </p>
+                  )}
+                </div>
+
+                <Button
+                  type="submit"
+                  className="h-11 w-full"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Signing in..." : "Sign In"}
+                </Button>
+              </form>
+
+              <div className="mt-8 text-center text-sm text-muted-foreground">
+                Don't have a school account?{" "}
+                <Link
+                  href="/"
+                  className="font-medium text-primary hover:underline"
+                >
+                  Register your school
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
   );
 }

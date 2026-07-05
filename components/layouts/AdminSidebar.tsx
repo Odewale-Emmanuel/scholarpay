@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/hooks/useAppDispatch";
-import { toggleSidebar } from "@/lib/store/slices/user/uiSlice";
+import { toggleSidebar } from "@/lib/store/slices/admin/uiSlice";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
