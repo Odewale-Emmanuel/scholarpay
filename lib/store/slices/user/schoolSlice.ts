@@ -1,30 +1,27 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { School } from "@/types";
+import { clear } from "console";
 
 interface SchoolState {
   currentSchool: School | null;
 }
 
 const initialState: SchoolState = {
-  currentSchool: {
-    id: "sch_001",
-    name: "Excellence Academy",
-    email: "admin@excellence.edu.ng",
-    phone: "08012345678",
-    address: "12 School Road, Lagos",
-    createdAt: "2024-01-01T00:00:00Z",
-  },
+  currentSchool: null,
 };
 
 const schoolSlice = createSlice({
   name: "school",
   initialState,
   reducers: {
-    setCurrentSchool: (state, action: PayloadAction<School>) => {
+    setCurrentSchool: (state, action: PayloadAction<School | null>) => {
       state.currentSchool = action.payload;
+    },
+    clearCurrentSchool: (state) => {
+      state.currentSchool = null;
     },
   },
 });
 
-export const { setCurrentSchool } = schoolSlice.actions;
+export const { setCurrentSchool, clearCurrentSchool } = schoolSlice.actions;
 export default schoolSlice.reducer;

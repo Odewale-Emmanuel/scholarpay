@@ -1,11 +1,5 @@
 import { apiClient } from "@/lib/api/api-client";
-
-export type School = {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-};
+import { School } from "@/types";
 
 export type ResponseData = {
   token: string;

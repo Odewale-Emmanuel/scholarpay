@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 
-import { loginSchema, LoginFormValues } from "@/schema/login";
+import { loginSchema, LoginFormValues } from "@/schemas/login";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,8 +20,12 @@ import {
 } from "./_resources/api/login";
 import { NetworkRequestReturnType } from "@/lib/api/api-client";
 import { useNavigate } from "@/hooks/useNavigate";
+import { useAppDispatch } from "@/hooks/useAppDispatch";
+import { setCurrentSchool } from "@/lib/store/slices/user/schoolSlice";
+import { authHelper } from "@/utils/auth-helper";
 
 export default function LoginPage() {
+  const dispatch = useAppDispatch();
   const {
     register,
     handleSubmit,
@@ -35,6 +39,7 @@ export default function LoginPage() {
     },
   });
   const { navigateTo } = useNavigate();
+  const { setAccessToken } = authHelper;
 
   const createSchoolLoginMutation = useMutation({
     mutationFn: login,
@@ -52,6 +57,8 @@ export default function LoginPage() {
         return;
       }
 
+      dispatch(setCurrentSchool(response.data?.school ?? null));
+      setAccessToken(response.data?.token ?? "");
       toast.success("Login successful. Proceeding to Dashboard...");
       setTimeout(() => {
         navigateTo("/dashboard");

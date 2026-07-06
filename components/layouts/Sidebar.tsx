@@ -4,25 +4,34 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  School,
+  Users,
+  FileText,
+  CreditCard,
+  Calendar,
+  Bell,
   ChevronLeft,
-  User,
+  GraduationCap,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/hooks/useAppDispatch";
-import { toggleSidebar } from "@/lib/store/slices/admin/uiSlice";
+import { toggleSidebar } from "@/lib/store/slices/user/uiSlice";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
-  { href: "/admin-dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/admin-dashboard/schools", icon: School, label: "Schools" },
+  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/students", icon: Users, label: "Students" },
+  { href: "/fees", icon: FileText, label: "Fee Records" },
+  { href: "/installments", icon: Calendar, label: "Installments" },
+  { href: "/payments", icon: CreditCard, label: "Payments" },
+  { href: "/notifications", icon: Bell, label: "Notifications" },
 ];
 
-export function AdminSidebar() {
+export function Sidebar() {
   const pathname = usePathname();
   const dispatch = useAppDispatch();
-  const isOpen = useAppSelector((s) => s.adminUi.sidebarOpen);
+  const isOpen = useAppSelector((s) => s.ui.sidebarOpen);
+  const school = useAppSelector((s) => s.school.currentSchool);
 
   return (
     <aside
@@ -34,13 +43,13 @@ export function AdminSidebar() {
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-5 border-b min-h-[65px]">
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary shrink-0">
-          <User className="h-5 w-5 text-primary-foreground" />
+          <GraduationCap className="h-5 w-5 text-primary-foreground" />
         </div>
         {isOpen && (
           <div className="overflow-hidden">
-            <p className="font-bold text-sm leading-tight">Super Admin</p>
+            <p className="font-bold text-sm leading-tight">ScholarPay</p>
             <p className="text-xs text-muted-foreground truncate max-w-[140px]">
-              {"Admin"}
+              {school?.name ?? "School Admin"}
             </p>
           </div>
         )}
@@ -57,7 +66,7 @@ export function AdminSidebar() {
       {/* Nav */}
       <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
         {navItems.map(({ href, icon: Icon, label }) => {
-          const isActive = pathname === href;
+          const isActive = pathname.startsWith(href);
           return (
             <Link
               key={href}
@@ -89,7 +98,7 @@ export function AdminSidebar() {
           </Button>
         )}
         <Link
-          href="/admin-login"
+          href="/login"
           className={cn(
             "flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors",
           )}

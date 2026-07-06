@@ -94,7 +94,7 @@ export default function SchoolPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background">
+    <main className="min-h-screen bg-linear-to-br from-background via-primary/5 to-background">
       <div className="container mx-auto flex min-h-screen items-center px-4 py-8 lg:px-8">
         <div className="grid w-full gap-12 lg:grid-cols-2 lg:items-center">
           {/* Hero */}

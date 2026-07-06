@@ -8,6 +8,10 @@ export const authHelper = {
   },
 
   getAccessToken(): string | null {
+    if (typeof window === "undefined") {
+      return null;
+    }
+
     return localStorage.getItem(ACCESS_TOKEN_KEY);
   },
 
@@ -30,26 +34,26 @@ export const authHelper = {
 
   // Save both tokens
   setTokens(accessToken: string, refreshToken: string): void {
-    this.setAccessToken(accessToken);
-    this.setRefreshToken(refreshToken);
+    authHelper.setAccessToken(accessToken);
+    authHelper.setRefreshToken(refreshToken);
   },
 
   // Get both tokens
   getTokens() {
     return {
-      accessToken: this.getAccessToken(),
-      refreshToken: this.getRefreshToken(),
+      accessToken: authHelper.getAccessToken(),
+      refreshToken: authHelper.getRefreshToken(),
     };
   },
 
   // Clear all auth tokens
   clearTokens(): void {
-    this.removeAccessToken();
-    this.removeRefreshToken();
+    authHelper.removeAccessToken();
+    authHelper.removeRefreshToken();
   },
 
   // Check login status
-  isAuthenticated(): boolean {
-    return !!this.getAccessToken();
+  isAuthenticated: () => {
+    return !!authHelper.getAccessToken();
   },
 };

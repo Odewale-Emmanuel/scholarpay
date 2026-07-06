@@ -5,9 +5,6 @@ export interface School {
   name: string;
   email: string;
   phone: string;
-  address: string;
-  logoUrl?: string;
-  createdAt: string;
 }
 
 export interface Student {
