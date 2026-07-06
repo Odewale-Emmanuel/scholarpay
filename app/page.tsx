@@ -11,11 +11,16 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
 
-import { RegisterSchool } from "./_resources/api/register-school";
+import {
+  RegisterSchool,
+  SchoolRegistrationResponse,
+} from "./_resources/api/register-school";
 import {
   RegisterSchoolFormValues,
   registerSchoolSchema,
 } from "./_resources/schema/register-school";
+import { NetworkRequestReturnType } from "@/lib/api/api-client";
+import { useNavigate } from "@/hooks/useNavigate";
 
 export default function SchoolPage() {
   const {
@@ -33,13 +38,14 @@ export default function SchoolPage() {
       confirmPassword: "",
     },
   });
+  const { navigateTo } = useNavigate();
 
   const createSchoolMutation = useMutation({
     mutationFn: RegisterSchool,
 
     onSuccess: (response) => {
       if (!response.success) {
-        const apiErrors = response.errors?.errors ?? [];
+        const apiErrors = response.errors ?? [];
 
         if (apiErrors.length > 0) {
           apiErrors.forEach((error) => toast.error(error.message));
@@ -50,22 +56,31 @@ export default function SchoolPage() {
         return;
       }
 
-      toast.success("School created successfully.");
+      toast.success("School created successfully. Proceeding to Login...");
+      setTimeout(() => {
+        navigateTo("/login");
+      }, 2000);
 
       reset();
 
       // TODO:
-      // - Close dialog
       // - Invalidate schools query
     },
 
-    onError: (error) => {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Something went wrong. Please try again.";
+    onError: (error: NetworkRequestReturnType<SchoolRegistrationResponse>) => {
+      const response = error.data;
 
-      toast.error(message);
+      if (response?.errors?.length) {
+        response.errors.forEach((e) => toast.error(e.message));
+        return;
+      }
+
+      if (response?.message) {
+        toast.error(response.message);
+        return;
+      }
+
+      toast.error("Something went wrong.");
     },
   });
 

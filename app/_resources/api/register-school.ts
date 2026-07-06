@@ -14,7 +14,22 @@ export type ResponseData = {
   school: School;
 };
 
-export type Error = {
+// export type Error = {
+//   origin: string;
+//   code: string;
+//   format?: string;
+//   pattern?: string;
+//   minimum?: number;
+//   inclusive?: boolean;
+//   path: string[];
+//   message: string;
+// };
+
+// export type ResponseError = {
+//   errors: Error[];
+// };
+
+export type ValidationError = {
   origin: string;
   code: string;
   format?: string;
@@ -25,14 +40,11 @@ export type Error = {
   message: string;
 };
 
-export type ResponseError = {
-  errors: Error[];
-};
-
 export type SchoolRegistrationResponse = {
   success: boolean;
   data?: ResponseData;
-  errors?: ResponseError;
+  errors?: ValidationError[];
+  message?: string;
 };
 
 type RegistrationDetails = {

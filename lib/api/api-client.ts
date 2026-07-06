@@ -94,7 +94,8 @@ const request = async <T = unknown>(
       headers: response.headers as Record<string, string>,
     };
   } catch (error) {
-    return handleError<T>(error);
+    const errorResponse = handleError<T>(error);
+    throw errorResponse;
   }
 };
 

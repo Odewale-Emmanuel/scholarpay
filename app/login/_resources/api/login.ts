@@ -12,26 +12,38 @@ export type ResponseData = {
   school: School;
 };
 
-export type Error = {
+// export type Error = {
+//   origin: string;
+//   code: string;
+//   minimum: number;
+//   inclusive: true;
+//   path: string[];
+//   message: string;
+// };
+
+// export type ResponseError = {
+//   errors: Error[];
+// };
+
+export type ValidationError = {
   origin: string;
   code: string;
-  minimum: number;
-  inclusive: true;
+  format?: string;
+  pattern?: string;
+  minimum?: number;
+  inclusive?: boolean;
   path: string[];
   message: string;
-};
-
-export type ResponseError = {
-  errors: Error[];
 };
 
 export type SchoolLoginResponse = {
   success: boolean;
   data?: ResponseData;
-  errors?: ResponseError;
+  errors?: ValidationError[];
+  message?: string;
 };
 
-type LoginDetails = {
+export type LoginDetails = {
   email: string;
   password: string;
 };
@@ -44,7 +56,6 @@ async function login({
     url: "/schools/login",
     payload: { email, password },
   });
-  // console.log('advance: ', response.data);
   return response.data as SchoolLoginResponse;
 }
 

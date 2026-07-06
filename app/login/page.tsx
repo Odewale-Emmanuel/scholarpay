@@ -11,12 +11,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { CreditCard, GraduationCap, Landmark, ShieldCheck } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import {
+  login,
+  SchoolLoginResponse,
+  LoginDetails,
+} from "./_resources/api/login";
+import { NetworkRequestReturnType } from "@/lib/api/api-client";
+import { useNavigate } from "@/hooks/useNavigate";
 
 export default function LoginPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    reset,
+    formState: { errors },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -24,13 +34,58 @@ export default function LoginPage() {
       password: "",
     },
   });
+  const { navigateTo } = useNavigate();
 
-  const onSubmit = async (values: LoginFormValues) => {
-    console.log(values);
+  const createSchoolLoginMutation = useMutation({
+    mutationFn: login,
+
+    onSuccess: (response) => {
+      if (!response.success) {
+        const apiErrors = response.errors ?? [];
+
+        if (apiErrors.length > 0) {
+          apiErrors.forEach((error) => toast.error(error.message));
+        } else {
+          toast.error("Unable to login, please try again.");
+        }
+
+        return;
+      }
+
+      toast.success("Login successful. Proceeding to Dashboard...");
+      setTimeout(() => {
+        navigateTo("/dashboard");
+      }, 1500);
+
+      reset();
+    },
+
+    onError: (error: NetworkRequestReturnType<SchoolLoginResponse>) => {
+      const response = error.data;
+
+      if (response?.errors?.length) {
+        response.errors.forEach((e) => toast.error(e.message));
+        return;
+      }
+
+      if (response?.message) {
+        toast.error(response.message);
+        return;
+      }
+
+      toast.error("Something went wrong.");
+    },
+  });
+
+  const onSubmit = (values: LoginDetails) => {
+    createSchoolLoginMutation.mutate({
+      email: values.email,
+      password: values.password,
+    });
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-primary/5">
+    <main className="min-h-screen bg-linear-to-br from-slate-50 via-white to-primary/5">
       <div className="grid min-h-screen lg:grid-cols-2">
         {/* Left Side */}
         <section className="hidden flex-col justify-between gap-10 bg-primary p-12 text-primary-foreground lg:flex">
@@ -153,14 +208,16 @@ export default function LoginPage() {
                 <Button
                   type="submit"
                   className="h-11 w-full"
-                  disabled={isSubmitting}
+                  disabled={createSchoolLoginMutation.isPending}
                 >
-                  {isSubmitting ? "Signing in..." : "Sign In"}
+                  {createSchoolLoginMutation.isPending
+                    ? "Signing in..."
+                    : "Sign In"}
                 </Button>
               </form>
 
               <div className="mt-8 text-center text-sm text-muted-foreground">
-                Don't have a school account?{" "}
+                Don&rsquo;t have a school account?{" "}
                 <Link
                   href="/"
                   className="font-medium text-primary hover:underline"
