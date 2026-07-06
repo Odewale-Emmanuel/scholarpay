@@ -38,7 +38,7 @@ export function CreateSchoolForm() {
 
     onSuccess: (response) => {
       if (!response.success) {
-        const apiErrors = response.errors?.errors ?? [];
+        const apiErrors = response.errors ?? [];
 
         if (apiErrors.length > 0) {
           apiErrors.forEach((error) => toast.error(error.message));
