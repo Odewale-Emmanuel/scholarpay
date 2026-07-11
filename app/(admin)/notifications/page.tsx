@@ -81,6 +81,7 @@ export default function NotificationsPage() {
   // const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const PAGE_LIMIT = 10;
+  const RefreshInterval = 15_000; // Refetch every 15 seconds
 
   const {
     data: notificationsResponse,
@@ -90,6 +91,7 @@ export default function NotificationsPage() {
   } = useQuery({
     queryKey: ["notifications", page],
     queryFn: () => getNotifications({ page, limit: PAGE_LIMIT }),
+    refetchInterval: RefreshInterval,
   });
 
   const notifications = notificationsResponse?.data ?? [];
