@@ -1,5 +1,5 @@
 import { InstallmentPlan } from "@/types";
-import { formatCurrency, formatDate } from "@/utils/format";
+import { formatNumber, formatDate } from "@/utils/format";
 import { StatusBadge } from "./StatusBadge";
 import { cn } from "@/lib/utils";
 import { CheckCircle2, Clock, AlertCircle, Circle } from "lucide-react";
@@ -16,8 +16,13 @@ const statusIcon = {
   partial: <Clock className="h-5 w-5 text-blue-500" />,
 };
 
-export function InstallmentTimeline({ installments, className }: InstallmentTimelineProps) {
-  const sorted = [...installments].sort((a, b) => a.installmentNumber - b.installmentNumber);
+export function InstallmentTimeline({
+  installments,
+  className,
+}: InstallmentTimelineProps) {
+  const sorted = [...installments].sort(
+    (a, b) => a.installmentNumber - b.installmentNumber,
+  );
 
   return (
     <div className={cn("space-y-0", className)}>
@@ -25,7 +30,9 @@ export function InstallmentTimeline({ installments, className }: InstallmentTime
         <div key={inst.id} className="flex gap-4">
           {/* Timeline connector */}
           <div className="flex flex-col items-center">
-            <div className="mt-1">{statusIcon[inst.status] ?? statusIcon.pending}</div>
+            <div className="mt-1">
+              {statusIcon[inst.status] ?? statusIcon.pending}
+            </div>
             {idx < sorted.length - 1 && (
               <div className="w-px flex-1 bg-border my-1 min-h-[2rem]" />
             )}
@@ -48,10 +55,12 @@ export function InstallmentTimeline({ installments, className }: InstallmentTime
                 )}
               </div>
               <div className="text-right">
-                <p className="font-semibold text-sm">{formatCurrency(inst.amount)}</p>
+                <p className="font-semibold text-sm">
+                  {formatNumber(inst.amount)}
+                </p>
                 {inst.paidAmount > 0 && inst.paidAmount < inst.amount && (
                   <p className="text-xs text-muted-foreground">
-                    {formatCurrency(inst.paidAmount)} paid
+                    {formatNumber(inst.paidAmount)} paid
                   </p>
                 )}
                 <div className="mt-1">

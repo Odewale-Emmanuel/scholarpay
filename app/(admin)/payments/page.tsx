@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 
 import { DataTable, Column } from "@/components/shared/DataTable";
-import { SearchBar } from "@/components/shared/SearchBar";
+// import { SearchBar } from "@/components/shared/SearchBar";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,9 +14,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Payment } from "@/types";
-import { mockPaymentsWithDetails } from "@/mock/data";
-import { formatCurrency, formatDateTime } from "@/utils/format";
+import { formatNumber, formatDateTime } from "@/utils/format";
+import { useQuery } from "@tanstack/react-query";
+import {
+  getPaymentHistory,
+  PaymentStatus,
+  Payment,
+} from "./_resources/api/get-payment-history";
+import { toast } from "sonner";
+import { AppPagination } from "@/components/shared/AppPagination";
 
 const columns: Column<Payment>[] = [
   {
@@ -32,33 +38,18 @@ const columns: Column<Payment>[] = [
     ),
   },
   {
-    key: "student",
-    header: "Student",
+    key: "sequence",
+    header: "Sequence",
     cell: (row) => (
-      <div>
-        <p className="text-sm font-medium">
-          {row.student?.firstName} {row.student?.lastName}
-        </p>
-        <p className="text-xs text-muted-foreground">{row.feeRecord?.title}</p>
-      </div>
+      <span className="font-semibold">{row.installmentSequence}</span>
     ),
   },
   {
     key: "amount",
     header: "Amount",
-    cell: (row) => <span className="font-semibold">{formatCurrency(row.amount)}</span>,
-  },
-  {
-    key: "channel",
-    header: "Channel",
     cell: (row) => (
-      <span className="text-xs px-2 py-0.5 rounded bg-muted">{row.channel}</span>
+      <span className="font-semibold">{formatNumber(row.amount)}</span>
     ),
-  },
-  {
-    key: "paymentMethod",
-    header: "Method",
-    cell: (row) => <span className="text-xs capitalize">{row.paymentMethod}</span>,
   },
   {
     key: "status",
@@ -66,8 +57,17 @@ const columns: Column<Payment>[] = [
     cell: (row) => <StatusBadge status={row.status} />,
   },
   {
+    key: "createdAt",
+    header: "Created At",
+    cell: (row) => (
+      <span className="text-xs text-muted-foreground">
+        {row.createdAt ? formatDateTime(row.createdAt) : "—"}
+      </span>
+    ),
+  },
+  {
     key: "paidAt",
-    header: "Date",
+    header: "Paid At",
     cell: (row) => (
       <span className="text-xs text-muted-foreground">
         {row.paidAt ? formatDateTime(row.paidAt) : "—"}
@@ -79,29 +79,45 @@ const columns: Column<Payment>[] = [
     header: "",
     cell: (row) => (
       <Button variant="ghost" size="sm" asChild>
-        <Link href={`/payments/${row.reference}`}>Receipt</Link>
+        <Link href={`/payments/${row.installmentId}`}>View Installments</Link>
       </Button>
     ),
   },
 ];
 
 export default function PaymentsPage() {
-  const [payments] = useState(mockPaymentsWithDetails);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<PaymentStatus | "ALL">(
+    "ALL",
+  );
+  const [page, setPage] = useState(1);
+  const PAGE_LIMIT = 10;
+  const RefreshInterval = 15_000; // Refetch every 15 seconds
 
-  const filtered = payments.filter((p) => {
-    const matchesSearch =
-      !search ||
-      p.reference.toLowerCase().includes(search.toLowerCase()) ||
-      `${p.student?.firstName} ${p.student?.lastName}`.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "all" || p.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  const {
+    data: paymentHistory,
+    isLoading,
+    error,
+    isError,
+    refetch: refetchPayments,
+  } = useQuery({
+    queryKey: ["payments", statusFilter, page],
+    queryFn: () =>
+      getPaymentHistory({ status: statusFilter, page, limit: PAGE_LIMIT }),
+    refetchInterval: RefreshInterval,
   });
 
-  const totalCollected = payments
-    .filter((p) => p.status === "success")
-    .reduce((s, p) => s + p.amount, 0);
+  const payments = paymentHistory?.data ?? [];
+  const totalPayments = paymentHistory?.pagination.total ?? 0;
+
+  if (isError) {
+    toast.error("Failed to fetch payment history. Please click to retry.", {
+      action: {
+        label: "Retry",
+        onClick: () => refetchPayments(),
+      },
+      duration: 4500,
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -109,36 +125,41 @@ export default function PaymentsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Payments</h1>
           <p className="text-sm text-muted-foreground">
-            {payments.length} transactions · {formatCurrency(totalCollected)} collected
+            {totalPayments} payment{totalPayments > 1 && "s"} found
           </p>
+        </div>
+        <div className="">
+          <Select
+            value={statusFilter}
+            onValueChange={(value) =>
+              setStatusFilter(value as PaymentStatus | "ALL")
+            }
+          >
+            <SelectTrigger className="w-36">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Status</SelectItem>
+              <SelectItem value="SUCCESS">Success</SelectItem>
+              <SelectItem value="PENDING">Pending</SelectItem>
+              <SelectItem value="FAILED">Failed</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      <div className="flex gap-3 flex-wrap">
-        <SearchBar
-          value={search}
-          onChange={setSearch}
-          placeholder="Search by reference or student..."
-          className="w-72"
-        />
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-36">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="success">Success</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
       <DataTable
-        data={filtered}
+        data={payments}
         columns={columns}
-        emptyMessage="No payments found."
+        emptyMessage={`No ${statusFilter !== "ALL" ? statusFilter.toLowerCase() : ""} payments found.`}
       />
+
+      {paymentHistory && (
+        <AppPagination
+          pagination={paymentHistory.pagination}
+          onPageChange={setPage}
+        />
+      )}
     </div>
   );
 }

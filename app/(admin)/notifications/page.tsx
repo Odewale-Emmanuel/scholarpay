@@ -2,23 +2,29 @@
 
 import { useState } from "react";
 import { Bell, MessageSquare, Mail, Send } from "lucide-react";
-import { toast } from "sonner";
 
 import { DataTable, Column } from "@/components/shared/DataTable";
-import { SearchBar } from "@/components/shared/SearchBar";
+// import { SearchBar } from "@/components/shared/SearchBar";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Notification } from "@/types";
-import { mockNotificationsWithStudents } from "@/mock/data";
+// import { Button } from "@/components/ui/button";
+// import { Card, CardContent } from "@/components/ui/card";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@/components/ui/select";
+// import { Notification } from "@/types";
+// import { mockNotificationsWithStudents } from "@/mock/data";
 import { formatDateTime } from "@/utils/format";
+import {
+  getNotifications,
+  Notification,
+} from "./_resources/api/get-notifications";
+import { useQuery } from "@tanstack/react-query";
+import { AppPagination } from "@/components/shared/AppPagination";
+import { toast } from "sonner";
 
 const typeIcon = {
   whatsapp: <MessageSquare className="h-4 w-4 text-green-600" />,
@@ -28,34 +34,29 @@ const typeIcon = {
 
 const columns: Column<Notification>[] = [
   {
-    key: "type",
+    key: "channel",
     header: "Channel",
     cell: (row) => (
-      <div className="flex items-center gap-2">
-        {typeIcon[row.type] ?? <Bell className="h-4 w-4" />}
-        <span className="text-xs capitalize font-medium">{row.type}</span>
-      </div>
+      <span className="capitalize font-medium">{row.channel}</span>
     ),
   },
   {
-    key: "student",
-    header: "Student",
-    cell: (row) => (
-      <p className="text-sm font-medium">
-        {row.student?.firstName} {row.student?.lastName}
-      </p>
-    ),
+    key: "recipient",
+    header: "Recipient",
+    cell: (row) => <p className="text-sm font-medium">{row.recipient}</p>,
   },
   {
-    key: "title",
-    header: "Title",
-    cell: (row) => <span className="text-sm font-medium">{row.title}</span>,
+    key: "type",
+    header: "Type",
+    cell: (row) => <span className="text-sm font-medium">{row.type}</span>,
   },
   {
     key: "message",
     header: "Message",
     cell: (row) => (
-      <p className="text-xs text-muted-foreground max-w-xs truncate">{row.message}</p>
+      <p className="text-xs text-muted-foreground max-w-xs truncate">
+        {row.message}
+      </p>
     ),
   },
   {
@@ -75,27 +76,23 @@ const columns: Column<Notification>[] = [
 ];
 
 export default function NotificationsPage() {
-  const [notifications] = useState(mockNotificationsWithStudents);
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  // const [search, setSearch] = useState("");
+  // const [typeFilter, setTypeFilter] = useState("all");
+  // const [statusFilter, setStatusFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const PAGE_LIMIT = 10;
 
-  const filtered = notifications.filter((n) => {
-    const matchesSearch =
-      !search ||
-      n.title.toLowerCase().includes(search.toLowerCase()) ||
-      `${n.student?.firstName} ${n.student?.lastName}`.toLowerCase().includes(search.toLowerCase());
-    const matchesType = typeFilter === "all" || n.type === typeFilter;
-    const matchesStatus = statusFilter === "all" || n.status === statusFilter;
-    return matchesSearch && matchesType && matchesStatus;
+  const {
+    data: notificationsResponse,
+    // isLoading,
+    // isError,
+    // error,
+  } = useQuery({
+    queryKey: ["notifications", page],
+    queryFn: () => getNotifications({ page, limit: PAGE_LIMIT }),
   });
 
-  const handleSendReminder = () => {
-    toast.success("Reminders sent to all students with pending payments!");
-  };
-
-  const sentCount = notifications.filter((n) => n.status === "sent").length;
-  const failedCount = notifications.filter((n) => n.status === "failed").length;
+  const notifications = notificationsResponse?.data ?? [];
 
   return (
     <div className="space-y-6">
@@ -103,63 +100,22 @@ export default function NotificationsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Notifications</h1>
           <p className="text-sm text-muted-foreground">
-            {sentCount} sent · {failedCount} failed
+            {notificationsResponse?.pagination.total ?? 0} notifications
           </p>
         </div>
-        <Button onClick={handleSendReminder}>
-          <Send className="h-4 w-4" />
-          Send Bulk Reminder
-        </Button>
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: "Total Sent", value: sentCount, color: "text-green-600" },
-          { label: "Failed", value: failedCount, color: "text-red-600" },
-          { label: "WhatsApp", value: notifications.filter((n) => n.type === "whatsapp").length, color: "text-blue-600" },
-        ].map(({ label, value, color }) => (
-          <Card key={label}>
-            <CardContent className="p-4 text-center">
-              <p className={`text-2xl font-bold ${color}`}>{value}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <div className="flex gap-3 flex-wrap">
-        <SearchBar
-          value={search}
-          onChange={setSearch}
-          placeholder="Search notifications..."
-          className="w-64"
+      <DataTable
+        data={notifications}
+        columns={columns}
+        emptyMessage="No notifications found."
+      />
+      {notificationsResponse && (
+        <AppPagination
+          pagination={notificationsResponse.pagination}
+          onPageChange={setPage}
         />
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-36">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Channels</SelectItem>
-            <SelectItem value="whatsapp">WhatsApp</SelectItem>
-            <SelectItem value="email">Email</SelectItem>
-            <SelectItem value="sms">SMS</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-32">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="sent">Sent</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <DataTable data={filtered} columns={columns} emptyMessage="No notifications found." />
+      )}
     </div>
   );
 }

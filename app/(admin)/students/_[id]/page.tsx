@@ -57,7 +57,9 @@ export default function StudentDetailPage({ params }: Props) {
             </h1>
             <StatusBadge status={student.status} />
           </div>
-          <p className="text-muted-foreground font-mono text-sm">{student.studentId}</p>
+          <p className="text-muted-foreground font-mono text-sm">
+            {student.studentId}
+          </p>
           <p className="text-muted-foreground text-sm">{student.grade}</p>
         </div>
         <Button asChild>
@@ -78,7 +80,11 @@ export default function StudentDetailPage({ params }: Props) {
               { icon: Mail, label: "Email", value: student.email },
               { icon: Phone, label: "Phone", value: student.phone },
               { icon: GraduationCap, label: "Grade", value: student.grade },
-              { icon: Calendar, label: "Enrolled", value: formatDate(student.createdAt) },
+              {
+                icon: Calendar,
+                label: "Enrolled",
+                value: formatDate(student.createdAt),
+              },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} className="flex items-center gap-3">
                 <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -115,7 +121,8 @@ export default function StudentDetailPage({ params }: Props) {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-semibold flex items-center gap-2">
-            <CreditCard className="h-4 w-4" /> Fee Records ({studentFees.length})
+            <CreditCard className="h-4 w-4" /> Fee Records ({studentFees.length}
+            )
           </h2>
           <Button variant="outline" size="sm" asChild>
             <Link href="/fees/create">Add Fee Record</Link>

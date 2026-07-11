@@ -4,12 +4,38 @@ function toDate(date: string | Date): Date {
   return typeof date === "string" ? parseISO(date) : date;
 }
 
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency: "NGN",
+export type FormatNumberOptions = {
+  style?: "number" | "currency";
+  compact?: boolean;
+  currency?: string;
+  locale?: string;
+  prefix?: string;
+  suffix?: string;
+  maximumFractionDigits?: number;
+};
+
+export function formatNumber(
+  value: number,
+  {
+    style = "number",
+    compact = false,
+    currency = "NGN",
+    locale = "en-NG",
+    prefix = "",
+    suffix = "",
+    maximumFractionDigits = 1,
+  }: FormatNumberOptions = {},
+) {
+  const formatter = new Intl.NumberFormat(locale, {
+    style: style === "number" ? "decimal" : "currency",
+    ...(style === "currency" ? { currency } : {}),
+    notation: compact ? "compact" : "standard",
+    compactDisplay: "short",
     minimumFractionDigits: 0,
-  }).format(amount);
+    maximumFractionDigits,
+  });
+
+  return `${prefix}${formatter.format(value)}${suffix}`;
 }
 
 export function formatDate(date: string | Date): string {

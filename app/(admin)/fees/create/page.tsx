@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { mockStudents } from "@/mock/data";
-import { formatCurrency, formatDate } from "@/utils/format";
+import { formatNumber, formatDate } from "@/utils/format";
 import { TERMS, ACADEMIC_SESSIONS } from "@/constants";
 import { FeeRecord, InstallmentPlan, Student } from "@/types";
 import { cn } from "@/lib/utils";
@@ -49,7 +49,7 @@ function generateInstallments(
   totalAmount: number,
   count: 2 | 3,
   startDate: Date,
-  feeRecordId: string
+  feeRecordId: string,
 ): InstallmentPlan[] {
   const baseAmount = Math.floor(totalAmount / count);
   const remainder = totalAmount - baseAmount * count;
@@ -96,12 +96,18 @@ export default function CreateFeePage() {
   const filteredStudents = mockStudents.filter(
     (s) =>
       !studentSearch ||
-      `${s.firstName} ${s.lastName}`.toLowerCase().includes(studentSearch.toLowerCase()) ||
-      s.studentId.toLowerCase().includes(studentSearch.toLowerCase())
+      `${s.firstName} ${s.lastName}`
+        .toLowerCase()
+        .includes(studentSearch.toLowerCase()) ||
+      s.studentId.toLowerCase().includes(studentSearch.toLowerCase()),
   );
 
   // Step 3: preview installments
-  const previewInstallments = (count: 2 | 3, amount: number, dueDate: string) => {
+  const previewInstallments = (
+    count: 2 | 3,
+    amount: number,
+    dueDate: string,
+  ) => {
     if (!amount || !dueDate) return [];
     const start = new Date(dueDate);
     start.setMonth(start.getMonth() - count + 1);
@@ -138,7 +144,7 @@ export default function CreateFeePage() {
       data.totalAmount,
       data.installmentCount,
       new Date(data.dueDate),
-      feeId
+      feeId,
     );
 
     setCreatedFee(fee);
@@ -148,14 +154,14 @@ export default function CreateFeePage() {
     toast.success("Fee record created successfully!");
   };
 
-  const preview = watchedAmount && watchedDueDate
-    ? previewInstallments(watchedCount || 2, watchedAmount, watchedDueDate)
-    : [];
+  const preview =
+    watchedAmount && watchedDueDate
+      ? previewInstallments(watchedCount || 2, watchedAmount, watchedDueDate)
+      : [];
 
-  const paymentLink =
-    createdFee
-      ? `${typeof window !== "undefined" ? window.location.origin : ""}/public/pay/${createdFee.paymentToken}`
-      : "";
+  const paymentLink = createdFee
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/public/pay/${createdFee.paymentToken}`
+    : "";
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -181,21 +187,27 @@ export default function CreateFeePage() {
                   isDone
                     ? "bg-green-500 text-white"
                     : isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground",
                 )}
               >
-                {isDone ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
+                {isDone ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <Icon className="h-4 w-4" />
+                )}
               </div>
               <span
                 className={cn(
                   "text-xs hidden sm:block truncate",
-                  isActive ? "font-medium" : "text-muted-foreground"
+                  isActive ? "font-medium" : "text-muted-foreground",
                 )}
               >
                 {s.label}
               </span>
-              {idx < STEPS.length - 1 && <div className="flex-1 h-px bg-border mx-1" />}
+              {idx < STEPS.length - 1 && (
+                <div className="flex-1 h-px bg-border mx-1" />
+              )}
             </div>
           );
         })}
@@ -223,7 +235,8 @@ export default function CreateFeePage() {
                   }}
                   className={cn(
                     "flex items-center justify-between p-3 rounded-lg border cursor-pointer hover:border-primary transition-colors",
-                    selectedStudent?.id === student.id && "border-primary bg-primary/5"
+                    selectedStudent?.id === student.id &&
+                      "border-primary bg-primary/5",
                   )}
                 >
                   <div>
@@ -263,12 +276,23 @@ export default function CreateFeePage() {
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
               <Label>Fee Title</Label>
-              <Input {...register("title")} placeholder="First Term School Fees" />
-              {errors.title && <p className="text-xs text-destructive">{errors.title.message}</p>}
+              <Input
+                {...register("title")}
+                placeholder="First Term School Fees"
+              />
+              {errors.title && (
+                <p className="text-xs text-destructive">
+                  {errors.title.message}
+                </p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label>Description (optional)</Label>
-              <Textarea {...register("description")} placeholder="Tuition, textbooks, and activities" rows={2} />
+              <Textarea
+                {...register("description")}
+                placeholder="Tuition, textbooks, and activities"
+                rows={2}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Total Amount (₦)</Label>
@@ -277,7 +301,11 @@ export default function CreateFeePage() {
                 type="number"
                 placeholder="150000"
               />
-              {errors.totalAmount && <p className="text-xs text-destructive">{errors.totalAmount.message}</p>}
+              {errors.totalAmount && (
+                <p className="text-xs text-destructive">
+                  {errors.totalAmount.message}
+                </p>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -291,7 +319,9 @@ export default function CreateFeePage() {
                   </SelectTrigger>
                   <SelectContent>
                     {ACADEMIC_SESSIONS.map((s) => (
-                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -307,7 +337,9 @@ export default function CreateFeePage() {
                   </SelectTrigger>
                   <SelectContent>
                     {TERMS.map((t) => (
-                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -316,19 +348,29 @@ export default function CreateFeePage() {
             <div className="space-y-1.5">
               <Label>Final Due Date</Label>
               <Input {...register("dueDate")} type="date" />
-              {errors.dueDate && <p className="text-xs text-destructive">{errors.dueDate.message}</p>}
+              {errors.dueDate && (
+                <p className="text-xs text-destructive">
+                  {errors.dueDate.message}
+                </p>
+              )}
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
+              <Button variant="outline" onClick={() => setStep(1)}>
+                Back
+              </Button>
               <Button
                 className="flex-1"
                 onClick={async () => {
                   const valid = await new Promise<boolean>((resolve) => {
-                    handleSubmit(() => resolve(true), () => resolve(false))();
+                    handleSubmit(
+                      () => resolve(true),
+                      () => resolve(false),
+                    )();
                   });
                   // Just check required step-2 fields
                   const vals = getValues();
-                  if (valid && vals.title && vals.totalAmount && vals.dueDate) setStep(3);
+                  if (valid && vals.title && vals.totalAmount && vals.dueDate)
+                    setStep(3);
                 }}
               >
                 Continue <ArrowRight className="h-4 w-4" />
@@ -344,7 +386,7 @@ export default function CreateFeePage() {
           <CardHeader>
             <CardTitle>Choose Installment Plan</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Total: {formatCurrency(watchedAmount || 0)}
+              Total: {formatNumber(watchedAmount || 0)}
             </p>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -357,14 +399,14 @@ export default function CreateFeePage() {
                     "p-4 rounded-lg border-2 cursor-pointer transition-all text-center",
                     watchedCount === count
                       ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
+                      : "border-border hover:border-primary/50",
                   )}
                 >
                   <p className="text-2xl font-bold">{count}</p>
                   <p className="text-sm text-muted-foreground">installments</p>
                   {watchedAmount > 0 && (
                     <p className="text-xs font-medium mt-1 text-primary">
-                      ≈ {formatCurrency(Math.round(watchedAmount / count))} each
+                      ≈ {formatNumber(Math.round(watchedAmount / count))} each
                     </p>
                   )}
                 </div>
@@ -382,8 +424,12 @@ export default function CreateFeePage() {
                   >
                     <span>Installment {inst.installmentNumber}</span>
                     <div className="text-right">
-                      <p className="font-semibold">{formatCurrency(inst.amount)}</p>
-                      <p className="text-xs text-muted-foreground">Due: {formatDate(inst.dueDate)}</p>
+                      <p className="font-semibold">
+                        {formatNumber(inst.amount)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Due: {formatDate(inst.dueDate)}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -391,7 +437,9 @@ export default function CreateFeePage() {
             )}
 
             <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
+              <Button variant="outline" onClick={() => setStep(2)}>
+                Back
+              </Button>
               <Button className="flex-1" onClick={() => setStep(4)}>
                 Continue <ArrowRight className="h-4 w-4" />
               </Button>
@@ -420,15 +468,21 @@ export default function CreateFeePage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Total Amount</span>
-                <span className="font-semibold">{formatCurrency(watchedAmount || 0)}</span>
+                <span className="font-semibold">
+                  {formatNumber(watchedAmount || 0)}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Session</span>
-                <span>{watch("academicSession")} · {watch("term")}</span>
+                <span>
+                  {watch("academicSession")} · {watch("term")}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Installments</span>
-                <span className="font-medium">{watchedCount}x installments</span>
+                <span className="font-medium">
+                  {watchedCount}x installments
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Final Due Date</span>
@@ -445,15 +499,21 @@ export default function CreateFeePage() {
                   >
                     <span>Installment {inst.installmentNumber}</span>
                     <div className="text-right">
-                      <p className="font-semibold">{formatCurrency(inst.amount)}</p>
-                      <p className="text-xs text-muted-foreground">Due: {formatDate(inst.dueDate)}</p>
+                      <p className="font-semibold">
+                        {formatNumber(inst.amount)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Due: {formatDate(inst.dueDate)}
+                      </p>
                     </div>
                   </div>
                 ))}
               </div>
             )}
             <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setStep(3)}>Back</Button>
+              <Button variant="outline" onClick={() => setStep(3)}>
+                Back
+              </Button>
               <Button
                 className="flex-1"
                 onClick={handleSubmit(onSubmit)}
@@ -478,14 +538,19 @@ export default function CreateFeePage() {
             <div>
               <h2 className="text-xl font-bold">Fee Record Created!</h2>
               <p className="text-muted-foreground text-sm mt-1">
-                {createdFee.title} for {selectedStudent?.firstName} has been created.
+                {createdFee.title} for {selectedStudent?.firstName} has been
+                created.
               </p>
             </div>
 
             <div className="bg-muted rounded-lg p-4 text-left space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase">Payment Link</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase">
+                Payment Link
+              </p>
               <div className="flex items-center gap-2">
-                <code className="flex-1 text-xs font-mono break-all">{paymentLink}</code>
+                <code className="flex-1 text-xs font-mono break-all">
+                  {paymentLink}
+                </code>
                 <Button
                   variant="outline"
                   size="icon"

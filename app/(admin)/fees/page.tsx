@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { FeeRecord } from "@/types";
 import { mockFeesWithStudents } from "@/mock/data";
-import { formatCurrency, formatDate } from "@/utils/format";
+import { formatNumber, formatDate } from "@/utils/format";
 
 const columns: Column<FeeRecord>[] = [
   {
@@ -30,7 +30,9 @@ const columns: Column<FeeRecord>[] = [
         <p className="font-medium text-sm">
           {row.student?.firstName} {row.student?.lastName}
         </p>
-        <p className="text-xs text-muted-foreground font-mono">{row.student?.studentId}</p>
+        <p className="text-xs text-muted-foreground font-mono">
+          {row.student?.studentId}
+        </p>
       </div>
     ),
   },
@@ -40,14 +42,18 @@ const columns: Column<FeeRecord>[] = [
     cell: (row) => (
       <div>
         <p className="text-sm font-medium">{row.title}</p>
-        <p className="text-xs text-muted-foreground">{row.term} · {row.academicSession}</p>
+        <p className="text-xs text-muted-foreground">
+          {row.term} · {row.academicSession}
+        </p>
       </div>
     ),
   },
   {
     key: "totalAmount",
     header: "Total",
-    cell: (row) => <span className="font-semibold">{formatCurrency(row.totalAmount)}</span>,
+    cell: (row) => (
+      <span className="font-semibold">{formatNumber(row.totalAmount)}</span>
+    ),
   },
   {
     key: "progress",
@@ -69,7 +75,9 @@ const columns: Column<FeeRecord>[] = [
     key: "dueDate",
     header: "Due Date",
     cell: (row) => (
-      <span className="text-xs text-muted-foreground">{formatDate(row.dueDate)}</span>
+      <span className="text-xs text-muted-foreground">
+        {formatDate(row.dueDate)}
+      </span>
     ),
   },
   {
@@ -99,7 +107,9 @@ export default function FeesPage() {
     const matchesSearch =
       !search ||
       f.title.toLowerCase().includes(search.toLowerCase()) ||
-      `${f.student?.firstName} ${f.student?.lastName}`.toLowerCase().includes(search.toLowerCase());
+      `${f.student?.firstName} ${f.student?.lastName}`
+        .toLowerCase()
+        .includes(search.toLowerCase());
     const matchesStatus = statusFilter === "all" || f.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -115,7 +125,8 @@ export default function FeesPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Fee Records</h1>
           <p className="text-sm text-muted-foreground">
-            {formatCurrency(totals.collected)} collected · {formatCurrency(totals.outstanding)} outstanding
+            {formatNumber(totals.collected)} collected ·{" "}
+            {formatNumber(totals.outstanding)} outstanding
           </p>
         </div>
         <Button asChild>
@@ -152,7 +163,12 @@ export default function FeesPage() {
           icon={FileText}
           title="No fee records found"
           description="Create a fee record to get started."
-          action={{ label: "Create Fee Record", onClick: () => { window.location.href = "/fees/create"; } }}
+          action={{
+            label: "Create Fee Record",
+            onClick: () => {
+              window.location.href = "/fees/create";
+            },
+          }}
         />
       ) : (
         <DataTable data={filtered} columns={columns} />

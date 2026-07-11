@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { School } from "@/types";
-import { clear } from "console";
 
 interface SchoolState {
   currentSchool: School | null;

@@ -1,4 +1,6 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
+import { authHelper } from "@/utils/auth-helper";
+import { ACCESS_TOKEN_KEY } from "@/utils/auth-helper";
 
 export interface NetworkRequestReturnType<T = unknown> {
   code: number;
@@ -53,15 +55,54 @@ const axiosInstance: AxiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
-    const token = localStorage.getItem("access_token");
+    const token = localStorage.getItem(String(ACCESS_TOKEN_KEY));
 
     if (token) {
-      config.headers.set("Authorization", `Bearer ${token}`);
+      config.headers.set({
+        ...config.headers,
+        Authorization: `Bearer ${token}`,
+      });
     }
   }
 
   return config;
 });
+
+axiosInstance.interceptors.request.use((config) => {
+  const token = authHelper.getAccessToken();
+
+  if (token) {
+    config.headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  return config;
+});
+
+let isRedirecting = false;
+
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError) => {
+    const currentPath = window.location.pathname;
+
+    if (
+      error.response?.status === 401 &&
+      typeof window !== "undefined" &&
+      currentPath !== "/login" &&
+      !isRedirecting
+    ) {
+      isRedirecting = true;
+
+      authHelper.clearTokens();
+
+      window.location.replace(
+        `/login?redirect=${encodeURIComponent(currentPath)}`,
+      );
+    }
+
+    return Promise.reject(error);
+  },
+);
 
 const request = async <T = unknown>(
   method: HttpMethod,

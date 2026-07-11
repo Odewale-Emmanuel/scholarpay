@@ -1,10 +1,10 @@
-const ACCESS_TOKEN_KEY = "access_token";
-const REFRESH_TOKEN_KEY = "refresh_token";
+export const ACCESS_TOKEN_KEY = process.env.NEXT_PUBLIC_ACCESS_TOKEN_KEY;
+export const REFRESH_TOKEN_KEY = process.env.NEXT_PUBLIC_REFRESH_TOKEN_KEY;
 
 export const authHelper = {
   // Access Token
   setAccessToken(token: string): void {
-    localStorage.setItem(ACCESS_TOKEN_KEY, token);
+    localStorage.setItem(String(ACCESS_TOKEN_KEY), token);
   },
 
   getAccessToken(): string | null {
@@ -12,24 +12,24 @@ export const authHelper = {
       return null;
     }
 
-    return localStorage.getItem(ACCESS_TOKEN_KEY);
+    return localStorage.getItem(String(ACCESS_TOKEN_KEY));
   },
 
   removeAccessToken(): void {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(String(ACCESS_TOKEN_KEY));
   },
 
   // Refresh Token
   setRefreshToken(token: string): void {
-    localStorage.setItem(REFRESH_TOKEN_KEY, token);
+    localStorage.setItem(String(REFRESH_TOKEN_KEY), token);
   },
 
   getRefreshToken(): string | null {
-    return localStorage.getItem(REFRESH_TOKEN_KEY);
+    return localStorage.getItem(String(REFRESH_TOKEN_KEY));
   },
 
   removeRefreshToken(): void {
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    localStorage.removeItem(String(REFRESH_TOKEN_KEY));
   },
 
   // Save both tokens

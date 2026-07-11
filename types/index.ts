@@ -23,6 +23,15 @@ export interface Student {
   createdAt: string;
 }
 
+export type Pagination = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+};
+
 export type FeeStatus = "unpaid" | "partial" | "paid" | "overdue";
 export type InstallmentStatus = "pending" | "paid" | "overdue" | "partial";
 export type PaymentStatus = "pending" | "success" | "failed" | "processing";

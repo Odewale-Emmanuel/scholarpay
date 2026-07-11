@@ -2,7 +2,13 @@
 
 import { use, useState } from "react";
 import { notFound } from "next/navigation";
-import { GraduationCap, CheckCircle2, ExternalLink, Loader2, Lock } from "lucide-react";
+import {
+  GraduationCap,
+  CheckCircle2,
+  ExternalLink,
+  Loader2,
+  Lock,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -11,7 +17,7 @@ import { InstallmentTimeline } from "@/components/shared/InstallmentTimeline";
 import { PaymentProgress } from "@/components/shared/PaymentProgress";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { getPublicFeeByToken } from "@/mock/data";
-import { formatCurrency, formatDate } from "@/utils/format";
+import { formatNumber, formatDate } from "@/utils/format";
 import { InstallmentPlan } from "@/types";
 
 interface Props {
@@ -28,7 +34,10 @@ export default function PublicPayPage({ params }: Props) {
   const [paying, setPaying] = useState<string | null>(null);
 
   const pendingInstallments = installments.filter(
-    (i) => i.status === "pending" || i.status === "overdue" || i.status === "partial"
+    (i) =>
+      i.status === "pending" ||
+      i.status === "overdue" ||
+      i.status === "partial",
   );
 
   const handlePay = async (installment: InstallmentPlan) => {
@@ -37,7 +46,7 @@ export default function PublicPayPage({ params }: Props) {
     // Simulate ALATPay redirect
     toast.success(
       "Redirecting to ALATPay... (simulation — no real payment processed)",
-      { duration: 4000 }
+      { duration: 4000 },
     );
     setTimeout(() => {
       const url = `https://alatpay.ng/checkout?ref=DEMO_${installment.id}&amount=${installment.amount}`;
@@ -69,7 +78,9 @@ export default function PublicPayPage({ params }: Props) {
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs text-muted-foreground uppercase font-semibold">Student</p>
+                <p className="text-xs text-muted-foreground uppercase font-semibold">
+                  Student
+                </p>
                 <CardTitle className="text-base">
                   {fee.student?.firstName} {fee.student?.lastName}
                 </CardTitle>
@@ -90,9 +101,21 @@ export default function PublicPayPage({ params }: Props) {
 
             <div className="grid grid-cols-3 gap-3 text-center">
               {[
-                { label: "Total", value: formatCurrency(fee.totalAmount), color: "" },
-                { label: "Paid", value: formatCurrency(fee.amountPaid), color: "text-green-600" },
-                { label: "Remaining", value: formatCurrency(fee.amountOutstanding), color: "text-orange-600" },
+                {
+                  label: "Total",
+                  value: formatNumber(fee.totalAmount),
+                  color: "",
+                },
+                {
+                  label: "Paid",
+                  value: formatNumber(fee.amountPaid),
+                  color: "text-green-600",
+                },
+                {
+                  label: "Remaining",
+                  value: formatNumber(fee.amountOutstanding),
+                  color: "text-orange-600",
+                },
               ].map(({ label, value, color }) => (
                 <div key={label} className="bg-muted rounded-lg p-2">
                   <p className={`font-semibold text-sm ${color}`}>{value}</p>
@@ -101,7 +124,10 @@ export default function PublicPayPage({ params }: Props) {
               ))}
             </div>
 
-            <PaymentProgress totalAmount={fee.totalAmount} amountPaid={fee.amountPaid} />
+            <PaymentProgress
+              totalAmount={fee.totalAmount}
+              amountPaid={fee.amountPaid}
+            />
           </CardContent>
         </Card>
 
@@ -140,7 +166,7 @@ export default function PublicPayPage({ params }: Props) {
                   </div>
                   <div className="text-right flex items-center gap-3">
                     <div>
-                      <p className="font-bold">{formatCurrency(inst.amount)}</p>
+                      <p className="font-bold">{formatNumber(inst.amount)}</p>
                       <StatusBadge status={inst.status} />
                     </div>
                     <Button

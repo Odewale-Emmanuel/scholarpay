@@ -17,21 +17,64 @@ import { cn } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/hooks/useAppDispatch";
 import { toggleSidebar } from "@/lib/store/slices/user/uiSlice";
 import { Button } from "@/components/ui/button";
+import { logout } from "@/app/_resources/api/logout";
+import { authHelper } from "@/utils/auth-helper";
+import {
+  setCurrentSchool,
+  clearCurrentSchool,
+} from "@/lib/store/slices/user/schoolSlice";
+import { toast } from "sonner";
+import { useNavigate } from "@/hooks/useNavigate";
+import { useMutation } from "@tanstack/react-query";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/students", icon: Users, label: "Students" },
   { href: "/fees", icon: FileText, label: "Fee Records" },
-  { href: "/installments", icon: Calendar, label: "Installments" },
   { href: "/payments", icon: CreditCard, label: "Payments" },
   { href: "/notifications", icon: Bell, label: "Notifications" },
 ];
+
+type LogoutErrorResponse = {
+  code: number;
+  status: string;
+  data: {
+    success: boolean;
+    message: string;
+  };
+};
 
 export function Sidebar() {
   const pathname = usePathname();
   const dispatch = useAppDispatch();
   const isOpen = useAppSelector((s) => s.ui.sidebarOpen);
   const school = useAppSelector((s) => s.school.currentSchool);
+  const { navigateTo } = useNavigate();
+
+  const { mutate: logoutMutate, isPending: loggingOut } = useMutation({
+    mutationFn: logout,
+    onSuccess: () => {
+      authHelper.clearTokens();
+      dispatch(setCurrentSchool(null));
+      dispatch(clearCurrentSchool());
+      navigateTo("/login");
+      toast.success("Logout successful.");
+    },
+    onError: (error: unknown) => {
+      if ((error as LogoutErrorResponse)?.code === 401) {
+        if ((error as LogoutErrorResponse)?.code === 401) {
+          authHelper.clearTokens();
+          dispatch(setCurrentSchool(null));
+          dispatch(clearCurrentSchool());
+          navigateTo("/login");
+          toast.error("Session expired. Please login again.");
+          return;
+        }
+        toast.error("Failed to Logout. Please try again.");
+        console.error("Logout failed:", error);
+      }
+    },
+  });
 
   return (
     <aside
@@ -41,14 +84,14 @@ export function Sidebar() {
       )}
     >
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b min-h-[65px]">
+      <div className="flex items-center gap-3 px-4 py-5 border-b min-h-16.25">
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary shrink-0">
           <GraduationCap className="h-5 w-5 text-primary-foreground" />
         </div>
         {isOpen && (
           <div className="overflow-hidden">
             <p className="font-bold text-sm leading-tight">ScholarPay</p>
-            <p className="text-xs text-muted-foreground truncate max-w-[140px]">
+            <p className="text-xs text-muted-foreground truncate max-w-35">
               {school?.name ?? "School Admin"}
             </p>
           </div>
@@ -97,15 +140,17 @@ export function Sidebar() {
             <ChevronLeft className="h-4 w-4 rotate-180" />
           </Button>
         )}
-        <Link
-          href="/login"
+        <Button
+          onClick={() => logoutMutate()}
+          disabled={loggingOut}
+          variant={"ghost"}
           className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors",
+            "flex items-center justify-start w-full gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors",
           )}
         >
           <LogOut className="h-4 w-4 shrink-0" />
-          {isOpen && <span>Sign Out</span>}
-        </Link>
+          {isOpen && <span>{loggingOut ? "Logging out..." : "Logout"}</span>}
+        </Button>
       </div>
     </aside>
   );

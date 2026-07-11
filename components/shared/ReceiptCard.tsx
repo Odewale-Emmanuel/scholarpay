@@ -1,5 +1,5 @@
 import { Payment } from "@/types";
-import { formatCurrency, formatDateTime } from "@/utils/format";
+import { formatNumber, formatDateTime } from "@/utils/format";
 import { StatusBadge } from "./StatusBadge";
 import { CheckCircle2 } from "lucide-react";
 
@@ -23,7 +23,7 @@ export function ReceiptCard({ payment }: ReceiptCardProps) {
 
       {/* Amount */}
       <div className="text-center mb-6">
-        <p className="text-3xl font-bold">{formatCurrency(payment.amount)}</p>
+        <p className="text-3xl font-bold">{formatNumber(payment.amount)}</p>
         <div className="flex justify-center mt-2">
           <StatusBadge status={payment.status} />
         </div>
