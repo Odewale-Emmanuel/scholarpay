@@ -18,7 +18,7 @@ export const createFeeSchema = z.object({
   title: z.string().min(1, "Fee title is required"),
   description: z.string().optional(),
   totalAmount: z.number().positive("Amount must be positive"),
-  installmentCount: z.union([z.literal(2), z.literal(3)]),
+  installmentCount: z.number().min(2),
   dueDate: z.string().min(1, "Due date is required"),
   academicSession: z.string().min(1, "Academic session is required"),
   term: z.string().min(1, "Term is required"),

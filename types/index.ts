@@ -48,7 +48,7 @@ export interface FeeRecord {
   amountPaid: number;
   amountOutstanding: number;
   status: FeeStatus;
-  installmentCount: 2 | 3;
+  installmentCount: number;
   dueDate: string;
   academicSession: string;
   term: string;

@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api/api-client";
+import { Pagination } from "@/types";
 
 export interface FeeRecordStatusBreakdown {
   pending: number;
@@ -31,6 +32,7 @@ export interface DashboardMetricsData {
   totals: DashboardTotals;
   feeRecordStatusBreakdown: FeeRecordStatusBreakdown;
   recentPayments: RecentPayment[];
+  recentPaymentsPagination: Pagination;
 }
 
 export interface DashboardMetricsResponse {
@@ -39,14 +41,16 @@ export interface DashboardMetricsResponse {
 }
 
 type DashboardMetricsRequestParams = {
-  recentLimit?: number;
+  page?: number;
+  limit?: number;
 };
 
 async function getDashboardMetrics({
-  recentLimit = 5,
+  page = 1,
+  limit = 5,
 }: DashboardMetricsRequestParams = {}): Promise<DashboardMetricsResponse> {
   const response = await apiClient.get({
-    url: `/dashboard?recentLimit=${recentLimit}`,
+    url: `/dashboard?limit=${limit}&page=${page}`,
   });
   return response.data as DashboardMetricsResponse;
 }

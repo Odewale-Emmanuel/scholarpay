@@ -2,12 +2,9 @@
 
 import { useState } from "react";
 import { Plus, FileText } from "lucide-react";
-import Link from "next/link";
 
 import { DataTable, Column } from "@/components/shared/DataTable";
-import { SearchBar } from "@/components/shared/SearchBar";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { PaymentProgress } from "@/components/shared/PaymentProgress";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,9 +14,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FeeRecord } from "@/types";
-import { mockFeesWithStudents } from "@/mock/data";
+import { FeeRecord } from "./_resources/api/get-fee-records";
 import { formatNumber, formatDate } from "@/utils/format";
+import { FeeRecordStatus } from "./_resources/api/get-fee-records";
+import { useQuery } from "@tanstack/react-query";
+import {
+  getFeeRecords,
+  FeeRecordSummary,
+} from "./_resources/api/get-fee-records";
+import { AppPagination } from "@/components/shared/AppPagination";
+import { PaymentSummaryDialog } from "./_resources/components/payment-summary-dialog";
+import { useNavigate } from "@/hooks/useNavigate";
+import { SummaryCards } from "./_resources/components/summary-cards";
+import { toast } from "sonner";
 
 const columns: Column<FeeRecord>[] = [
   {
@@ -31,7 +38,7 @@ const columns: Column<FeeRecord>[] = [
           {row.student?.firstName} {row.student?.lastName}
         </p>
         <p className="text-xs text-muted-foreground font-mono">
-          {row.student?.studentId}
+          {row.student?.id}
         </p>
       </div>
     ),
@@ -39,31 +46,13 @@ const columns: Column<FeeRecord>[] = [
   {
     key: "title",
     header: "Fee Title",
-    cell: (row) => (
-      <div>
-        <p className="text-sm font-medium">{row.title}</p>
-        <p className="text-xs text-muted-foreground">
-          {row.term} · {row.academicSession}
-        </p>
-      </div>
-    ),
+    cell: (row) => <p className="text-sm font-medium">{row.title}</p>,
   },
   {
     key: "totalAmount",
     header: "Total",
     cell: (row) => (
       <span className="font-semibold">{formatNumber(row.totalAmount)}</span>
-    ),
-  },
-  {
-    key: "progress",
-    header: "Progress",
-    cell: (row) => (
-      <PaymentProgress
-        totalAmount={row.totalAmount}
-        amountPaid={row.amountPaid}
-        className="w-36"
-      />
     ),
   },
   {
@@ -91,33 +80,55 @@ const columns: Column<FeeRecord>[] = [
     key: "actions",
     header: "",
     cell: (row) => (
-      <Button variant="ghost" size="sm" asChild>
-        <Link href={`/installments?feeId=${row.id}`}>Details</Link>
-      </Button>
+      <div>
+        <PaymentSummaryDialog
+          summary={row.paymentSummary}
+          trigger={<Button>View Summary</Button>}
+        />
+      </div>
     ),
   },
 ];
 
 export default function FeesPage() {
-  const [fees] = useState(mockFeesWithStudents);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [feePage, setFeePage] = useState(1);
+  const FEE_PAGE_LIMIT = 10;
+  const [statusFilter, setStatusFilter] = useState<FeeRecordStatus | "ALL">(
+    "ALL",
+  );
+  const { navigateTo } = useNavigate();
 
-  const filtered = fees.filter((f) => {
-    const matchesSearch =
-      !search ||
-      f.title.toLowerCase().includes(search.toLowerCase()) ||
-      `${f.student?.firstName} ${f.student?.lastName}`
-        .toLowerCase()
-        .includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "all" || f.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  const RefreshInterval = 15_000; // Refetch every 15 seconds
+
+  const {
+    data: feeRecordsResponse,
+    isLoading: isLoadingFeeRecords,
+    isError: isFeeaRecordsError,
+    error: feeRecordsError,
+    refetch: refetchFeeRecords,
+  } = useQuery({
+    queryKey: ["feeRecords", feePage, statusFilter],
+    queryFn: () =>
+      getFeeRecords({
+        page: feePage,
+        limit: FEE_PAGE_LIMIT,
+        status: statusFilter,
+      }),
+    refetchInterval: RefreshInterval,
   });
 
-  const totals = {
-    collected: fees.reduce((s, f) => s + f.amountPaid, 0),
-    outstanding: fees.reduce((s, f) => s + f.amountOutstanding, 0),
-  };
+  if (isFeeaRecordsError) {
+    toast.error("An error occured while fetching fee records please try.", {
+      action: {
+        label: "Retry",
+        onClick: () => refetchFeeRecords(),
+      },
+    });
+  }
+
+  const feeRecords = feeRecordsResponse?.data ?? [];
+  const feeRecordSummary = feeRecordsResponse?.summary ?? [];
+  const totalFees = feeRecordsResponse?.pagination.total ?? 0;
 
   return (
     <div className="space-y-6">
@@ -125,40 +136,39 @@ export default function FeesPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Fee Records</h1>
           <p className="text-sm text-muted-foreground">
-            {formatNumber(totals.collected)} collected ·{" "}
-            {formatNumber(totals.outstanding)} outstanding
+            {formatNumber(totalFees)} fee{totalFees > 1 && "s"} found
           </p>
         </div>
-        <Button asChild>
-          <Link href="/fees/create">
-            <Plus className="h-4 w-4" />
-            Create Fee Record
-          </Link>
+        <Button onClick={() => navigateTo("/fees/create")}>
+          <Plus className="h-4 w-4" />
+          Create Fee Record
         </Button>
       </div>
 
-      <div className="flex gap-3 flex-wrap">
-        <SearchBar
-          value={search}
-          onChange={setSearch}
-          placeholder="Search fees..."
-          className="w-64"
-        />
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+      <SummaryCards
+        summary={feeRecordSummary as FeeRecordSummary}
+        loading={isLoadingFeeRecords}
+      />
+
+      <div className="">
+        <Select
+          value={statusFilter}
+          onValueChange={(value) => setStatusFilter(value as FeeRecordStatus)}
+        >
           <SelectTrigger className="w-36">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="unpaid">Unpaid</SelectItem>
-            <SelectItem value="partial">Partial</SelectItem>
-            <SelectItem value="paid">Paid</SelectItem>
-            <SelectItem value="overdue">Overdue</SelectItem>
+            <SelectItem value="ALL">All Status</SelectItem>
+            <SelectItem value="PAID">Paid</SelectItem>
+            <SelectItem value="PARTIALLY_PAID">Partially Paid</SelectItem>
+            <SelectItem value="PENDING">Pending</SelectItem>
+            <SelectItem value="OVERDUE">Overdue</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {filtered.length === 0 ? (
+      {feeRecords.length === 0 ? (
         <EmptyState
           icon={FileText}
           title="No fee records found"
@@ -166,12 +176,24 @@ export default function FeesPage() {
           action={{
             label: "Create Fee Record",
             onClick: () => {
-              window.location.href = "/fees/create";
+              navigateTo("/fees/create");
             },
           }}
         />
       ) : (
-        <DataTable data={filtered} columns={columns} />
+        <>
+          <DataTable
+            data={feeRecords}
+            columns={columns}
+            loading={isLoadingFeeRecords}
+          />
+          {feeRecordsResponse && (
+            <AppPagination
+              pagination={feeRecordsResponse.pagination}
+              onPageChange={setFeePage}
+            />
+          )}
+        </>
       )}
     </div>
   );

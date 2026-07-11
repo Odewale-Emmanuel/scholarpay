@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-
 import { DataTable, Column } from "@/components/shared/DataTable";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,14 +19,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AppPagination } from "@/components/shared/AppPagination";
-
 import { createStudentSchema, CreateStudentFormValues } from "@/schemas";
 import { formatDate } from "@/utils/format";
-
 import { getStudents } from "./_resources/api/get-students";
 import { CreateStudent, StudentInfo } from "./_resources/api/create-student";
-
 import { StudentsTableLoader } from "./_resources/components/student-table-loader";
+import { useDebounce } from "@/hooks/useDebounce";
+import { Search } from "lucide-react";
 
 const columns: Column<StudentInfo>[] = [
   {
@@ -69,6 +67,14 @@ export default function StudentsPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const PAGE_LIMIT = 10;
+  const [search, setSearch] = useState("");
+
+  const debouncedSearch = useDebounce(search, 500);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPage(1);
+  }, [debouncedSearch]);
 
   const {
     data: studentsResponse,
@@ -78,8 +84,13 @@ export default function StudentsPage() {
     error,
     refetch: refetchStudents,
   } = useQuery({
-    queryKey: ["students", page],
-    queryFn: () => getStudents({ page, limit: PAGE_LIMIT }),
+    queryKey: ["students", page, debouncedSearch],
+    queryFn: () =>
+      getStudents({
+        page,
+        limit: PAGE_LIMIT,
+        search: debouncedSearch || undefined,
+      }),
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
   });
@@ -147,7 +158,7 @@ export default function StudentsPage() {
           </div>
 
           <p className="text-sm text-muted-foreground">
-            {Number(studentsResponse?.pagination.total)} student
+            {Number(studentsResponse?.pagination.total) || 0} student
             {Number(studentsResponse?.pagination.total) > 1 && "s"} enrolled
           </p>
         </div>
@@ -156,6 +167,15 @@ export default function StudentsPage() {
           <Plus className="mr-2 h-4 w-4" />
           Add Student
         </Button>
+      </div>
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          className="pl-9"
+          placeholder="Search students..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
 
       {isLoading ? (
@@ -171,7 +191,6 @@ export default function StudentsPage() {
           )}
         </>
       )}
-
       {/* Add Student Modal */}
       <Dialog
         open={createStudentModalOpen}

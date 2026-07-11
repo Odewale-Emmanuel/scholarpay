@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -36,6 +36,20 @@ import { TERMS, ACADEMIC_SESSIONS } from "@/constants";
 import { FeeRecord, InstallmentPlan, Student } from "@/types";
 import { cn } from "@/lib/utils";
 import { addMonths, format } from "date-fns";
+import { useAppSelector, useAppDispatch } from "@/hooks/useAppDispatch";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useNavigate } from "@/hooks/useNavigate";
+import { SummaryCards } from "../_resources/components/summary-cards";
+import { StudentSelector } from "../_resources/components/student-selector";
+import {
+  getStudents,
+  GetStudentsResponse,
+} from "../../students/_resources/api/get-students";
+import { useQuery } from "@tanstack/react-query";
+import { setSelectedStudent } from "@/lib/store/slices/user/studentSlice";
+import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
+import { type DateRange } from "react-day-picker";
+import { addDays } from "date-fns";
 
 const STEPS = [
   { id: 1, label: "Select Student", icon: User },
@@ -47,7 +61,7 @@ const STEPS = [
 
 function generateInstallments(
   totalAmount: number,
-  count: 2 | 3,
+  count: number,
   startDate: Date,
   feeRecordId: string,
 ): InstallmentPlan[] {
@@ -67,11 +81,45 @@ function generateInstallments(
 
 export default function CreateFeePage() {
   const [step, setStep] = useState(1);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [installmentLimit, setInstallmentLimit] = useState(3);
   const [studentSearch, setStudentSearch] = useState("");
   const [, setInstallments] = useState<InstallmentPlan[]>([]);
   const [createdFee, setCreatedFee] = useState<FeeRecord | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [studentPage, setStudentPage] = useState(1);
+  const STUDENT_PAGE_LIMIT = 5;
+  const today = new Date();
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: today,
+    to: addDays(today, 60),
+  });
+
+  const debouncedSearch = useDebounce(studentSearch, 500);
+  const selectedStudent = useAppSelector((s) => s.student.selectedStudent);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setStudentPage(1);
+  }, [debouncedSearch]);
+
+  const {
+    data: studentsResponse,
+    isLoading: isLoadingStudents,
+    isFetching: isFetchingStudents,
+    isError: isStudentsError,
+    error: studentError,
+    refetch: refetchStudents,
+  } = useQuery({
+    queryKey: ["students", studentPage, debouncedSearch],
+    queryFn: () =>
+      getStudents({
+        page: studentPage,
+        limit: STUDENT_PAGE_LIMIT,
+        search: debouncedSearch || undefined,
+      }),
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
+  });
 
   const {
     register,
@@ -84,8 +132,6 @@ export default function CreateFeePage() {
     resolver: zodResolver(createFeeSchema),
     defaultValues: {
       installmentCount: 2,
-      academicSession: "2024/2025",
-      term: "First Term",
     },
   });
 
@@ -104,7 +150,7 @@ export default function CreateFeePage() {
 
   // Step 3: preview installments
   const previewInstallments = (
-    count: 2 | 3,
+    count: number,
     amount: number,
     dueDate: string,
   ) => {
@@ -125,7 +171,6 @@ export default function CreateFeePage() {
       id: feeId,
       schoolId: "sch_001",
       studentId: data.studentId,
-      student: selectedStudent ?? undefined,
       title: data.title,
       description: data.description,
       totalAmount: data.totalAmount,
@@ -221,38 +266,23 @@ export default function CreateFeePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <Input
-              placeholder="Search student by name or ID..."
+              placeholder="Search student by name"
               value={studentSearch}
               onChange={(e) => setStudentSearch(e.target.value)}
             />
-            <div className="space-y-2 max-h-72 overflow-y-auto">
-              {filteredStudents.map((student) => (
-                <div
-                  key={student.id}
-                  onClick={() => {
-                    setSelectedStudent(student);
-                    setValue("studentId", student.id);
-                  }}
-                  className={cn(
-                    "flex items-center justify-between p-3 rounded-lg border cursor-pointer hover:border-primary transition-colors",
-                    selectedStudent?.id === student.id &&
-                      "border-primary bg-primary/5",
-                  )}
-                >
-                  <div>
-                    <p className="font-medium text-sm">
-                      {student.firstName} {student.lastName}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {student.grade} · {student.studentId}
-                    </p>
-                  </div>
-                  {selectedStudent?.id === student.id && (
-                    <Check className="h-4 w-4 text-primary" />
-                  )}
-                </div>
-              ))}
+
+            <div className="">
+              {!selectedStudent && studentsResponse?.pagination.total !== 0 && (
+                <p className="text-sm text-gray-900 font-semibold ms-1 animate-pulse animation-duration-[3s]!">
+                  select a student to create a fee
+                </p>
+              )}
+              <StudentSelector
+                students={studentsResponse?.data || []}
+                loading={isLoadingStudents}
+              />
             </div>
+
             <Button
               className="w-full"
               disabled={!selectedStudent}
@@ -287,14 +317,6 @@ export default function CreateFeePage() {
               )}
             </div>
             <div className="space-y-1.5">
-              <Label>Description (optional)</Label>
-              <Textarea
-                {...register("description")}
-                placeholder="Tuition, textbooks, and activities"
-                rows={2}
-              />
-            </div>
-            <div className="space-y-1.5">
               <Label>Total Amount (₦)</Label>
               <Input
                 {...register("totalAmount", { valueAsNumber: true })}
@@ -307,53 +329,11 @@ export default function CreateFeePage() {
                 </p>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Academic Session</Label>
-                <Select
-                  defaultValue="2024/2025"
-                  onValueChange={(v) => setValue("academicSession", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ACADEMIC_SESSIONS.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Term</Label>
-                <Select
-                  defaultValue="First Term"
-                  onValueChange={(v) => setValue("term", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TERMS.map((t) => (
-                      <SelectItem key={t} value={t}>
-                        {t}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+
+            <div>
+              <DatePickerWithRange value={dateRange} onChange={setDateRange} />
             </div>
-            <div className="space-y-1.5">
-              <Label>Final Due Date</Label>
-              <Input {...register("dueDate")} type="date" />
-              {errors.dueDate && (
-                <p className="text-xs text-destructive">
-                  {errors.dueDate.message}
-                </p>
-              )}
-            </div>
+
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setStep(1)}>
                 Back
@@ -361,15 +341,14 @@ export default function CreateFeePage() {
               <Button
                 className="flex-1"
                 onClick={async () => {
-                  const valid = await new Promise<boolean>((resolve) => {
-                    handleSubmit(
-                      () => resolve(true),
-                      () => resolve(false),
-                    )();
-                  });
                   // Just check required step-2 fields
                   const vals = getValues();
-                  if (valid && vals.title && vals.totalAmount && vals.dueDate)
+                  if (
+                    vals.title &&
+                    vals.totalAmount &&
+                    dateRange?.from &&
+                    dateRange?.to
+                  )
                     setStep(3);
                 }}
               >
@@ -386,12 +365,33 @@ export default function CreateFeePage() {
           <CardHeader>
             <CardTitle>Choose Installment Plan</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Total: {formatNumber(watchedAmount || 0)}
+              Total:{" "}
+              {formatNumber(watchedAmount || 0, {
+                style: "currency",
+                compact: true,
+              })}
             </p>
           </CardHeader>
           <CardContent className="space-y-5">
+            <div className="space-y-1.5">
+              <Label>Installment Limit</Label>
+              <Input
+                type="number"
+                min={2}
+                value={installmentLimit}
+                onChange={(e) =>
+                  setInstallmentLimit(
+                    Number(e.target.value) < 2 ? 2 : Number(e.target.value),
+                  )
+                }
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
-              {([2, 3] as const).map((count) => (
+              {Array.from(
+                { length: installmentLimit - 1 },
+                (_, i) => i + 2,
+              ).map((count) => (
                 <div
                   key={count}
                   onClick={() => setValue("installmentCount", count)}
@@ -406,35 +406,25 @@ export default function CreateFeePage() {
                   <p className="text-sm text-muted-foreground">installments</p>
                   {watchedAmount > 0 && (
                     <p className="text-xs font-medium mt-1 text-primary">
-                      ≈ {formatNumber(Math.round(watchedAmount / count))} each
+                      ≈{" "}
+                      {count === getValues().installmentCount
+                        ? formatNumber(
+                            watchedAmount / getValues().installmentCount,
+                            {
+                              style: "currency",
+                              compact: true,
+                            },
+                          )
+                        : formatNumber(watchedAmount / count, {
+                            style: "currency",
+                            compact: true,
+                          })}{" "}
+                      each
                     </p>
-                  )}
+                  )}{" "}
                 </div>
               ))}
             </div>
-
-            {/* Preview */}
-            {preview.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Payment Schedule Preview</p>
-                {preview.map((inst) => (
-                  <div
-                    key={inst.id}
-                    className="flex justify-between items-center p-3 rounded-lg bg-muted text-sm"
-                  >
-                    <span>Installment {inst.installmentNumber}</span>
-                    <div className="text-right">
-                      <p className="font-semibold">
-                        {formatNumber(inst.amount)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Due: {formatDate(inst.dueDate)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
 
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setStep(2)}>
@@ -469,13 +459,10 @@ export default function CreateFeePage() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Total Amount</span>
                 <span className="font-semibold">
-                  {formatNumber(watchedAmount || 0)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Session</span>
-                <span>
-                  {watch("academicSession")} · {watch("term")}
+                  {formatNumber(watchedAmount || 0, {
+                    style: "currency",
+                    compact: true,
+                  })}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -485,8 +472,24 @@ export default function CreateFeePage() {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Final Due Date</span>
-                <span>{watchedDueDate ? formatDate(watchedDueDate) : "—"}</span>
+                <span className="text-muted-foreground">
+                  Collection Start Date
+                </span>
+                <span>
+                  <span>
+                    {dateRange?.from ? formatDate(dateRange.from) : "—"}
+                  </span>{" "}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  Collection End Date
+                </span>
+                <span>
+                  <span>
+                    {dateRange?.to ? formatDate(dateRange.to) : "—"}
+                  </span>{" "}
+                </span>
               </div>
             </div>
             {preview.length > 0 && (
@@ -516,7 +519,7 @@ export default function CreateFeePage() {
               </Button>
               <Button
                 className="flex-1"
-                onClick={handleSubmit(onSubmit)}
+                onClick={() => setStep(5)}
                 disabled={submitting}
               >
                 {submitting ? "Creating..." : "Create Fee Record"}

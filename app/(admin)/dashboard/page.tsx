@@ -75,6 +75,7 @@ export const formatMetricValue = (
 export default function DashboardPage() {
   // const recentPayments = mockPaymentsWithDetails.slice(0, 5);
   const school = useAppSelector((s) => s.school.currentSchool);
+  const RECENT_PAYMENTS_PAGE = 1;
   const RECENT_PAYMENTS_LIMIT = 5;
   const RefreshInterval = 15_000; // Refetch every 15 seconds
 
@@ -88,7 +89,8 @@ export default function DashboardPage() {
     queryKey: ["dashboard-metrics"],
     queryFn: () =>
       getDashboardMetrics({
-        recentLimit: RECENT_PAYMENTS_LIMIT,
+        page: RECENT_PAYMENTS_PAGE,
+        limit: RECENT_PAYMENTS_LIMIT,
       }),
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),

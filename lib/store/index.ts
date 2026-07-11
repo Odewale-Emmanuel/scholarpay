@@ -6,18 +6,20 @@ import authReducer from "./slices/user/authSlice";
 import uiReducer from "./slices/user/uiSlice";
 import schoolReducer from "./slices/user/schoolSlice";
 import adminUiReducer from "./slices/admin/uiSlice";
+import studentReducer from "./slices/user/studentSlice";
 
 export const rootReducer = combineReducers({
   auth: authReducer,
   ui: uiReducer,
   school: schoolReducer,
   adminUi: adminUiReducer,
+  student: studentReducer,
 });
 
 const persistConfig = {
   key: "root",
   storage,
-  whitelist: ["auth", "school"],
+  whitelist: ["auth", "school", "student"], // items to persist
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
