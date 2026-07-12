@@ -52,7 +52,12 @@ const columns: Column<FeeRecord>[] = [
     key: "totalAmount",
     header: "Total",
     cell: (row) => (
-      <span className="font-semibold">{formatNumber(row.totalAmount)}</span>
+      <span className="font-semibold">
+        {formatNumber(row.totalAmount, {
+          style: "currency",
+          compact: true,
+        })}
+      </span>
     ),
   },
   {
@@ -71,7 +76,7 @@ const columns: Column<FeeRecord>[] = [
   },
   {
     key: "installmentCount",
-    header: "Plan",
+    header: "Installments",
     cell: (row) => (
       <span className="text-xs font-medium">{row.installmentCount}x</span>
     ),

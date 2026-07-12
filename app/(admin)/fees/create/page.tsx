@@ -50,6 +50,8 @@ import { setSelectedStudent } from "@/lib/store/slices/user/studentSlice";
 import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
 import { type DateRange } from "react-day-picker";
 import { addDays } from "date-fns";
+import { CreateFeeRecord } from "../_resources/api/create-fee-record";
+import { useMutation } from "@tanstack/react-query";
 
 const STEPS = [
   { id: 1, label: "Select Student", icon: User },
@@ -59,33 +61,10 @@ const STEPS = [
   { id: 5, label: "Done", icon: CheckCircle2 },
 ];
 
-function generateInstallments(
-  totalAmount: number,
-  count: number,
-  startDate: Date,
-  feeRecordId: string,
-): InstallmentPlan[] {
-  const baseAmount = Math.floor(totalAmount / count);
-  const remainder = totalAmount - baseAmount * count;
-
-  return Array.from({ length: count }, (_, i) => ({
-    id: `inst_new_${i + 1}`,
-    feeRecordId,
-    installmentNumber: i + 1,
-    amount: i === count - 1 ? baseAmount + remainder : baseAmount,
-    dueDate: format(addMonths(startDate, i), "yyyy-MM-dd"),
-    paidAmount: 0,
-    status: "pending" as const,
-  }));
-}
-
 export default function CreateFeePage() {
   const [step, setStep] = useState(1);
   const [installmentLimit, setInstallmentLimit] = useState(3);
   const [studentSearch, setStudentSearch] = useState("");
-  const [, setInstallments] = useState<InstallmentPlan[]>([]);
-  const [createdFee, setCreatedFee] = useState<FeeRecord | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [studentPage, setStudentPage] = useState(1);
   const STUDENT_PAGE_LIMIT = 5;
   const today = new Date();
@@ -137,76 +116,45 @@ export default function CreateFeePage() {
 
   const watchedCount = watch("installmentCount");
   const watchedAmount = watch("totalAmount");
-  const watchedDueDate = watch("dueDate");
 
-  const filteredStudents = mockStudents.filter(
-    (s) =>
-      !studentSearch ||
-      `${s.firstName} ${s.lastName}`
-        .toLowerCase()
-        .includes(studentSearch.toLowerCase()) ||
-      s.studentId.toLowerCase().includes(studentSearch.toLowerCase()),
-  );
+  const {
+    mutate: createFeeRecord,
+    data: createdFee,
+    isPending: isCreatingFeeRecord,
+  } = useMutation({
+    mutationFn: CreateFeeRecord,
 
-  // Step 3: preview installments
-  const previewInstallments = (
-    count: number,
-    amount: number,
-    dueDate: string,
-  ) => {
-    if (!amount || !dueDate) return [];
-    const start = new Date(dueDate);
-    start.setMonth(start.getMonth() - count + 1);
-    return generateInstallments(amount, count, start, "preview");
-  };
+    onSuccess: () => {
+      toast.success("Fee record created successfully!");
+      setStep(5);
+    },
 
-  const onSubmit = async (data: CreateFeeFormValues) => {
-    if (step < 4) return;
-    setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 1000));
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create fee record.",
+      );
+    },
+  });
 
-    const feeId = `fee_${Date.now()}`;
-    const token = `tok_${Math.random().toString(36).substring(2, 10)}`;
-    const fee: FeeRecord = {
-      id: feeId,
-      schoolId: "sch_001",
-      studentId: data.studentId,
-      title: data.title,
-      description: data.description,
-      totalAmount: data.totalAmount,
-      amountPaid: 0,
-      amountOutstanding: data.totalAmount,
-      status: "unpaid",
-      installmentCount: data.installmentCount,
-      dueDate: data.dueDate,
-      academicSession: data.academicSession,
-      term: data.term,
-      paymentToken: token,
-      createdAt: new Date().toISOString(),
-    };
+  function handleCreateFeeRecord() {
+    if (!selectedStudent) {
+      toast.warning("Please select a student.");
+      return;
+    }
 
-    const insts = generateInstallments(
-      data.totalAmount,
-      data.installmentCount,
-      new Date(data.dueDate),
-      feeId,
-    );
+    const values = getValues();
 
-    setCreatedFee(fee);
-    setInstallments(insts);
-    setSubmitting(false);
-    setStep(5);
-    toast.success("Fee record created successfully!");
-  };
+    createFeeRecord({
+      studentId: selectedStudent.id,
+      title: values.title,
+      totalAmount: values.totalAmount,
+      installmentCount: values.installmentCount,
+      collectionStartDate: dateRange!.from!.toISOString(),
+      collectionDueDate: dateRange!.to!.toISOString(),
+    });
+  }
 
-  const preview =
-    watchedAmount && watchedDueDate
-      ? previewInstallments(watchedCount || 2, watchedAmount, watchedDueDate)
-      : [];
-
-  const paymentLink = createdFee
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/public/pay/${createdFee.paymentToken}`
-    : "";
+  const fee = createdFee?.data?.data;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -492,37 +440,17 @@ export default function CreateFeePage() {
                 </span>
               </div>
             </div>
-            {preview.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Installment Schedule</p>
-                {preview.map((inst) => (
-                  <div
-                    key={inst.id}
-                    className="flex justify-between items-center p-2 border rounded text-sm"
-                  >
-                    <span>Installment {inst.installmentNumber}</span>
-                    <div className="text-right">
-                      <p className="font-semibold">
-                        {formatNumber(inst.amount)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Due: {formatDate(inst.dueDate)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setStep(3)}>
                 Back
               </Button>
               <Button
                 className="flex-1"
-                onClick={() => setStep(5)}
-                disabled={submitting}
+                onClick={handleCreateFeeRecord}
+                disabled={isCreatingFeeRecord}
               >
-                {submitting ? "Creating..." : "Create Fee Record"}
+                {isCreatingFeeRecord ? "Creating..." : "Create Fee Record"}
               </Button>
             </div>
           </CardContent>
@@ -530,7 +458,7 @@ export default function CreateFeePage() {
       )}
 
       {/* Step 5: Success */}
-      {step === 5 && createdFee && (
+      {step === 5 && createdFee?.data && (
         <Card>
           <CardContent className="pt-8 pb-6 text-center space-y-6">
             <div className="flex justify-center">
@@ -539,37 +467,39 @@ export default function CreateFeePage() {
               </div>
             </div>
             <div>
-              <h2 className="text-xl font-bold">Fee Record Created!</h2>
-              <p className="text-muted-foreground text-sm mt-1">
-                {createdFee.title} for {selectedStudent?.firstName} has been
-                created.
+              <h2>Fee Record Created!</h2>
+
+              <p>
+                {fee?.title} for {fee?.student.firstName}{" "}
+                {fee?.student.lastName}
+                has been created.
               </p>
             </div>
 
-            <div className="bg-muted rounded-lg p-4 text-left space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase">
-                Payment Link
-              </p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 text-xs font-mono break-all">
-                  {paymentLink}
-                </code>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-7 w-7 shrink-0"
-                  onClick={() => {
-                    navigator.clipboard.writeText(paymentLink);
-                    toast.success("Payment link copied!");
-                  }}
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                </Button>
+            {fee?.virtualAccounts && (
+              <div className="bg-muted rounded-lg p-4 text-left space-y-2">
+                <p className="text-xs font-semibold uppercase">
+                  Virtual Account
+                </p>
+
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 break-all">
+                    {fee?.virtualAccounts}
+                  </code>
+
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText(fee?.virtualAccounts || "");
+                      toast.success("Copied!");
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Share this link with the parent via WhatsApp.
-              </p>
-            </div>
+            )}
 
             <div className="flex gap-3">
               <Button variant="outline" className="flex-1" asChild>

@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { Bell, MessageSquare, Mail, Send } from "lucide-react";
+import { MdWhatsapp } from "react-icons/md";
+import { MdOutlineAlternateEmail } from "react-icons/md";
+import { MdOutlineTextsms } from "react-icons/md";
 
 import { DataTable, Column } from "@/components/shared/DataTable";
 // import { SearchBar } from "@/components/shared/SearchBar";
@@ -24,12 +27,18 @@ import {
 } from "./_resources/api/get-notifications";
 import { useQuery } from "@tanstack/react-query";
 import { AppPagination } from "@/components/shared/AppPagination";
-import { toast } from "sonner";
+// import { toast } from "sonner";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 
 const typeIcon = {
-  whatsapp: <MessageSquare className="h-4 w-4 text-green-600" />,
-  email: <Mail className="h-4 w-4 text-blue-600" />,
-  sms: <Bell className="h-4 w-4 text-purple-600" />,
+  whatsapp: <MdWhatsapp className="h-4 w-4 text-green-600" />,
+  email: <MdOutlineAlternateEmail className="h-4 w-4 text-blue-600" />,
+  sms: <MdOutlineTextsms className="h-4 w-4 text-purple-600" />,
 };
 
 const columns: Column<Notification>[] = [
@@ -37,7 +46,10 @@ const columns: Column<Notification>[] = [
     key: "channel",
     header: "Channel",
     cell: (row) => (
-      <span className="capitalize font-medium">{row.channel}</span>
+      <div className="flex items-center gap-2">
+        {typeIcon[row.channel.toLocaleLowerCase() as keyof typeof typeIcon]}
+        <span className="capitalize font-medium">{row.channel}</span>
+      </div>
     ),
   },
   {
@@ -54,9 +66,17 @@ const columns: Column<Notification>[] = [
     key: "message",
     header: "Message",
     cell: (row) => (
-      <p className="text-xs text-muted-foreground max-w-xs truncate">
-        {row.message}
-      </p>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="secondary" size="sm">
+            View Message
+          </Button>
+        </PopoverTrigger>
+
+        <PopoverContent className="w-80">
+          <p className="text-sm leading-relaxed">{row.message}</p>
+        </PopoverContent>
+      </Popover>
     ),
   },
   {
@@ -85,7 +105,7 @@ export default function NotificationsPage() {
 
   const {
     data: notificationsResponse,
-    // isLoading,
+    isLoading,
     // isError,
     // error,
   } = useQuery({
@@ -110,6 +130,7 @@ export default function NotificationsPage() {
       <DataTable
         data={notifications}
         columns={columns}
+        loading={isLoading}
         emptyMessage="No notifications found."
       />
       {notificationsResponse && (

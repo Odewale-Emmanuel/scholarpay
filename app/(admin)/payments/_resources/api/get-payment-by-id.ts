@@ -1,16 +1,28 @@
 import { apiClient } from "@/lib/api/api-client";
 import { Pagination } from "@/types";
+import { PaymentStatus } from "./get-payment-history";
+
+export type PaymentHistory = {
+  id: string;
+  message: string;
+  reference: string;
+  transactionReference: string;
+  amount: number;
+  status: PaymentStatus;
+  paidAt: string | null;
+  createdAt: string;
+};
 
 export type GetPaymentByIdResponse = {
   success: true;
-  data: unknown[];
+  data: PaymentHistory[];
   pagination: Pagination;
 };
 
 type PaymentByIdRequestParams = {
-  installmentId?: string;
-  page: number;
-  limit: number;
+  installmentId: string;
+  page?: number;
+  limit?: number;
 };
 
 async function getPaymentById({
@@ -19,7 +31,7 @@ async function getPaymentById({
   limit = 10,
 }: PaymentByIdRequestParams): Promise<GetPaymentByIdResponse> {
   const response = await apiClient.get({
-    url: `/payments?installmentId=${installmentId}&page=${page}&limit=${limit}`,
+    url: `/payments/installments/${installmentId}/history?page=${page}&limit=${limit}`,
   });
   return response.data as GetPaymentByIdResponse;
 }

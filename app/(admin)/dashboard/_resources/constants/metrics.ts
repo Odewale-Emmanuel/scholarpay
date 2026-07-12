@@ -104,7 +104,7 @@ export const metricOverview: OverviewCard[] = [
     title: "Pending Payments",
     description: "Awaiting payment",
     value: 0,
-    valueType: "count",
+    valueType: "percentage",
     icon: Receipt,
     iconClassName: "text-violet-600",
     iconBgClassName: "bg-violet-100",

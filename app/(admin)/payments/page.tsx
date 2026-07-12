@@ -23,6 +23,7 @@ import {
 } from "./_resources/api/get-payment-history";
 import { toast } from "sonner";
 import { AppPagination } from "@/components/shared/AppPagination";
+import { InstallmentInfotDialog } from "./_resources/components/installment-info";
 
 const columns: Column<Payment>[] = [
   {
@@ -48,7 +49,12 @@ const columns: Column<Payment>[] = [
     key: "amount",
     header: "Amount",
     cell: (row) => (
-      <span className="font-semibold">{formatNumber(row.amount)}</span>
+      <span className="font-semibold">
+        {formatNumber(row.amount, {
+          style: "currency",
+          compact: true,
+        })}
+      </span>
     ),
   },
   {
@@ -78,9 +84,14 @@ const columns: Column<Payment>[] = [
     key: "actions",
     header: "",
     cell: (row) => (
-      <Button variant="ghost" size="sm" asChild>
-        <Link href={`/payments/${row.installmentId}`}>View Installments</Link>
-      </Button>
+      <InstallmentInfotDialog
+        installmentId={row.installmentId}
+        trigger={
+          <Button variant="ghost" size="sm">
+            View Installments
+          </Button>
+        }
+      />
     ),
   },
 ];
@@ -151,7 +162,10 @@ export default function PaymentsPage() {
       <DataTable
         data={payments}
         columns={columns}
-        emptyMessage={`No ${statusFilter !== "ALL" ? statusFilter.toLowerCase() : ""} payments found.`}
+        loading={isLoading}
+        emptyMessage={`No ${
+          statusFilter !== "ALL" ? statusFilter.toLowerCase() : ""
+        } payments found.`}
       />
 
       {paymentHistory && (
