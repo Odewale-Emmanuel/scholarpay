@@ -107,8 +107,8 @@ export default function PaymentsPage() {
   const {
     data: paymentHistory,
     isLoading,
-    error,
     isError,
+    // error,
     refetch: refetchPayments,
   } = useQuery({
     queryKey: ["payments", statusFilter, page],

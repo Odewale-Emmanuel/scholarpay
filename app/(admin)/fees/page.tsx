@@ -109,7 +109,7 @@ export default function FeesPage() {
     data: feeRecordsResponse,
     isLoading: isLoadingFeeRecords,
     isError: isFeeaRecordsError,
-    error: feeRecordsError,
+    // error: feeRecordsError,
     refetch: refetchFeeRecords,
   } = useQuery({
     queryKey: ["feeRecords", feePage, statusFilter],

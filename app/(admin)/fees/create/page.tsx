@@ -21,32 +21,29 @@ import { createFeeSchema, CreateFeeFormValues } from "@/schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+// import { Textarea } from "@/components/ui/textarea";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockStudents } from "@/mock/data";
+// import { mockStudents } from "@/mock/data";
 import { formatNumber, formatDate } from "@/utils/format";
-import { TERMS, ACADEMIC_SESSIONS } from "@/constants";
-import { FeeRecord, InstallmentPlan, Student } from "@/types";
+// import { TERMS, ACADEMIC_SESSIONS } from "@/constants";
+// import { FeeRecord, InstallmentPlan, Student } from "@/types";
 import { cn } from "@/lib/utils";
-import { addMonths, format } from "date-fns";
-import { useAppSelector, useAppDispatch } from "@/hooks/useAppDispatch";
+// import { addMonths, format } from "date-fns";
+import { useAppSelector } from "@/hooks/useAppDispatch";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useNavigate } from "@/hooks/useNavigate";
-import { SummaryCards } from "../_resources/components/summary-cards";
+// import { useNavigate } from "@/hooks/useNavigate";
+// import { SummaryCards } from "../_resources/components/summary-cards";
 import { StudentSelector } from "../_resources/components/student-selector";
-import {
-  getStudents,
-  GetStudentsResponse,
-} from "../../students/_resources/api/get-students";
+import { getStudents } from "../../students/_resources/api/get-students";
 import { useQuery } from "@tanstack/react-query";
-import { setSelectedStudent } from "@/lib/store/slices/user/studentSlice";
+// import { setSelectedStudent } from "@/lib/store/slices/user/studentSlice";
 import { DatePickerWithRange } from "@/components/shared/DatePickerWithRange";
 import { type DateRange } from "react-day-picker";
 import { addDays } from "date-fns";
@@ -77,17 +74,16 @@ export default function CreateFeePage() {
   const selectedStudent = useAppSelector((s) => s.student.selectedStudent);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStudentPage(1);
   }, [debouncedSearch]);
 
   const {
     data: studentsResponse,
     isLoading: isLoadingStudents,
-    isFetching: isFetchingStudents,
-    isError: isStudentsError,
-    error: studentError,
-    refetch: refetchStudents,
+    // isFetching: isFetchingStudents,
+    // isError: isStudentsError,
+    // error: studentError,
+    // refetch: refetchStudents,
   } = useQuery({
     queryKey: ["students", studentPage, debouncedSearch],
     queryFn: () =>
@@ -102,7 +98,7 @@ export default function CreateFeePage() {
 
   const {
     register,
-    handleSubmit,
+    // handleSubmit,
     watch,
     setValue,
     getValues,
@@ -114,6 +110,7 @@ export default function CreateFeePage() {
     },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const watchedCount = watch("installmentCount");
   const watchedAmount = watch("totalAmount");
 
