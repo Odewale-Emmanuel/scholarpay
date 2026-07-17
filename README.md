@@ -198,6 +198,3 @@ The project uses an Axios-based API client (`lib/api/api-client.ts`) that:
 - [Shadcn UI](https://ui.shadcn.com/)
 - [TanStack Query](https://tanstack.com/query/latest)
 
-## License
-
-This project is private and confidential.
