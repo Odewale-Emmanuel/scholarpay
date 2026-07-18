@@ -82,7 +82,7 @@ export function InstallmentInfotDialog({
     >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
 
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-xl overflow-auto max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Receipt className="h-5 w-5" />

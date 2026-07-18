@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, FileText } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { DataTable, Column } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -108,8 +109,8 @@ export default function FeesPage() {
   const {
     data: feeRecordsResponse,
     isLoading: isLoadingFeeRecords,
-    isError: isFeeaRecordsError,
-    // error: feeRecordsError,
+    isFetching,
+    isError: isFeeRecordsError,
     refetch: refetchFeeRecords,
   } = useQuery({
     queryKey: ["feeRecords", feePage, statusFilter],
@@ -120,20 +121,43 @@ export default function FeesPage() {
         status: statusFilter,
       }),
     refetchInterval: RefreshInterval,
+    placeholderData: (previousData) => previousData,
   });
 
-  if (isFeeaRecordsError) {
-    toast.error("An error occured while fetching fee records please try.", {
+  useEffect(() => {
+    if (!isFeeRecordsError) return;
+
+    toast.error("An error occurred while fetching fee records.", {
       action: {
         label: "Retry",
         onClick: () => refetchFeeRecords(),
       },
     });
-  }
-
+  }, [isFeeRecordsError, refetchFeeRecords]);
   const feeRecords = feeRecordsResponse?.data ?? [];
   const feeRecordSummary = feeRecordsResponse?.summary ?? [];
   const totalFees = feeRecordsResponse?.pagination.total ?? 0;
+  const hasNoData = feeRecords.length === 0;
+
+  if (isLoadingFeeRecords) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-52" />
+            <Skeleton className="h-4 w-36" />
+          </div>
+
+          <Skeleton className="h-10 w-44" />
+        </div>
+
+        <SummaryCards summary={{} as FeeRecordSummary} loading />
+
+        <Skeleton className="h-10 w-36" />
+        <Skeleton className="h-125 w-full rounded-xl" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -158,7 +182,10 @@ export default function FeesPage() {
       <div className="">
         <Select
           value={statusFilter}
-          onValueChange={(value) => setStatusFilter(value as FeeRecordStatus)}
+          onValueChange={(value) => {
+            setStatusFilter(value as FeeRecordStatus);
+            setFeePage(1);
+          }}
         >
           <SelectTrigger className="w-36">
             <SelectValue />
@@ -173,7 +200,7 @@ export default function FeesPage() {
         </Select>
       </div>
 
-      {feeRecords.length === 0 ? (
+      {hasNoData ? (
         <EmptyState
           icon={FileText}
           title="No fee records found"
@@ -187,11 +214,7 @@ export default function FeesPage() {
         />
       ) : (
         <>
-          <DataTable
-            data={feeRecords}
-            columns={columns}
-            loading={isLoadingFeeRecords}
-          />
+          <DataTable data={feeRecords} columns={columns} loading={isFetching} />
           {feeRecordsResponse && (
             <AppPagination
               pagination={feeRecordsResponse.pagination}

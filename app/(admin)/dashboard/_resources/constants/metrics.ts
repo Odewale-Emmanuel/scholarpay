@@ -1,22 +1,27 @@
 import type { LucideIcon } from "lucide-react";
 import {
   AlertCircle,
-  //   CheckCircle2,
+  CalendarClock,
   Clock,
   DollarSign,
-  CalendarClock,
   Receipt,
   TrendingUp,
 } from "lucide-react";
 
 export type DashboardTotalsKey =
+  | "totalBilled"
   | "totalCollected"
   | "totalOutstandingBalance"
-  | "totalPartialPayments"
+  | "fullyUnpaidOutstandingBalance"
+  | "partiallyPaidOutstandingBalance"
+  | "partiallyPaidFeeRecordsCount"
+  | "partiallyPaidFeeRecordsPercentage"
   | "collectionRate"
   | "overdueAmount"
   | "dueSoonInstallmentsCount"
-  | "pendingPaymentsCount";
+  | "dueSoonInstallmentsPercentage"
+  | "pendingPaymentsCount"
+  | "pendingPaymentsPercentage";
 
 export type MetricValueType = "amount" | "count" | "percentage";
 
@@ -33,6 +38,17 @@ export type OverviewCard = {
 };
 
 export const metricOverview: OverviewCard[] = [
+  {
+    key: "totalBilled",
+    title: "Total Billed",
+    description: "Fees billed",
+    value: 0,
+    valueType: "amount",
+    icon: Receipt,
+    iconClassName: "text-slate-600",
+    iconBgClassName: "bg-slate-100",
+    visible: true,
+  },
   {
     key: "totalCollected",
     title: "Total Collected",
@@ -56,15 +72,48 @@ export const metricOverview: OverviewCard[] = [
     visible: true,
   },
   {
-    key: "totalPartialPayments",
-    title: "Partial Payments",
-    description: "In progress",
+    key: "fullyUnpaidOutstandingBalance",
+    title: "Fully Unpaid",
+    description: "Outstanding balance",
+    value: 0,
+    valueType: "amount",
+    icon: AlertCircle,
+    iconClassName: "text-red-600",
+    iconBgClassName: "bg-red-100",
+    visible: false, // Enable if you want to show this card
+  },
+  {
+    key: "partiallyPaidOutstandingBalance",
+    title: "Partially Paid",
+    description: "Total partially paid balance",
     value: 0,
     valueType: "amount",
     icon: Clock,
     iconClassName: "text-blue-600",
     iconBgClassName: "bg-blue-100",
     visible: true,
+  },
+  {
+    key: "partiallyPaidFeeRecordsCount",
+    title: "Partial Fee Records",
+    description: "In progress",
+    value: 0,
+    valueType: "count",
+    icon: Clock,
+    iconClassName: "text-sky-600",
+    iconBgClassName: "bg-sky-100",
+    visible: false,
+  },
+  {
+    key: "partiallyPaidFeeRecordsPercentage",
+    title: "Partial Records %",
+    description: "Share of records",
+    value: 0,
+    valueType: "percentage",
+    icon: TrendingUp,
+    iconClassName: "text-cyan-600",
+    iconBgClassName: "bg-cyan-100",
+    visible: false,
   },
   {
     key: "collectionRate",
@@ -104,7 +153,7 @@ export const metricOverview: OverviewCard[] = [
     title: "Pending Payments",
     description: "Awaiting payment",
     value: 0,
-    valueType: "percentage",
+    valueType: "count",
     icon: Receipt,
     iconClassName: "text-violet-600",
     iconBgClassName: "bg-violet-100",

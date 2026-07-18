@@ -1,6 +1,22 @@
 import { apiClient } from "@/lib/api/api-client";
 import { Pagination } from "@/types";
 
+export interface DashboardTotals {
+  totalBilled: number;
+  totalCollected: number;
+  totalOutstandingBalance: number;
+  fullyUnpaidOutstandingBalance: number;
+  partiallyPaidOutstandingBalance: number;
+  partiallyPaidFeeRecordsCount: number;
+  partiallyPaidFeeRecordsPercentage: number;
+  collectionRate: number;
+  overdueAmount: number;
+  dueSoonInstallmentsCount: number;
+  dueSoonInstallmentsPercentage: number;
+  pendingPaymentsCount: number;
+  pendingPaymentsPercentage: number;
+}
+
 export interface FeeRecordStatusBreakdown {
   pending: number;
   partiallyPaid: number;
@@ -8,24 +24,37 @@ export interface FeeRecordStatusBreakdown {
   overdue: number;
 }
 
+export interface RecentPaymentInstallment {
+  id: string;
+  sequence: number;
+  dueDate: string; // ISO 8601
+}
+
+export interface RecentPaymentFeeRecord {
+  id: string;
+  title: string;
+  status: string;
+}
+
+export interface RecentPaymentStudent {
+  id: string;
+  firstName: string;
+  lastName: string;
+  parentName: string;
+}
+
 export interface RecentPayment {
   id: string;
   reference: string;
   transactionReference: string;
   amount: number;
-  status: string;
-  paidAt: string; // ISO 8601 date string
-  createdAt: string; // ISO 8601 date string
-}
+  status: "SUCCESS" | "FAILED" | "PENDING";
+  paidAt: string | null;
+  createdAt: string;
 
-export interface DashboardTotals {
-  totalCollected: number;
-  totalOutstandingBalance: number;
-  totalPartialPayments: number;
-  collectionRate: number;
-  overdueAmount: number;
-  dueSoonInstallmentsCount: number;
-  pendingPaymentsCount: number;
+  installment: RecentPaymentInstallment;
+  feeRecord: RecentPaymentFeeRecord;
+  student: RecentPaymentStudent;
 }
 
 export interface DashboardMetricsData {
@@ -40,7 +69,7 @@ export interface DashboardMetricsResponse {
   data: DashboardMetricsData;
 }
 
-type DashboardMetricsRequestParams = {
+export type DashboardMetricsRequestParams = {
   page?: number;
   limit?: number;
 };
@@ -50,8 +79,9 @@ async function getDashboardMetrics({
   limit = 5,
 }: DashboardMetricsRequestParams = {}): Promise<DashboardMetricsResponse> {
   const response = await apiClient.get({
-    url: `/dashboard?limit=${limit}&page=${page}`,
+    url: `/dashboard?page=${page}&limit=${limit}`,
   });
+
   return response.data as DashboardMetricsResponse;
 }
 

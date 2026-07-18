@@ -142,9 +142,10 @@ export default function PaymentsPage() {
         <div className="">
           <Select
             value={statusFilter}
-            onValueChange={(value) =>
-              setStatusFilter(value as PaymentStatus | "ALL")
-            }
+            onValueChange={(value) => {
+              setStatusFilter(value as PaymentStatus | "ALL");
+              setPage(1);
+            }}
           >
             <SelectTrigger className="w-36">
               <SelectValue />
